@@ -109,7 +109,7 @@ sudo apt update && sudo apt upgrade -y
 ### Install required system packages
 
 ```bash
-sudo apt install -y git python3-venv python3-dev chromium-browser unclutter
+sudo apt install -y git python3-venv python3-dev chromium unclutter
 ```
 
 | Package | Why |
@@ -117,7 +117,7 @@ sudo apt install -y git python3-venv python3-dev chromium-browser unclutter
 | `git` | Clone the BOSS repo |
 | `python3-venv` | Create isolated Python virtual environments |
 | `python3-dev` | Build native Python extensions (e.g. lgpio) |
-| `chromium-browser` | Kiosk browser for the BOSS UI |
+| `chromium` | Kiosk browser for the BOSS UI (called `chromium-browser` on older Pi OS) |
 | `unclutter` | Hides the mouse cursor after inactivity |
 
 ---
@@ -254,7 +254,7 @@ Type=simple
 User=pi
 Environment=DISPLAY=:0
 ExecStartPre=/bin/sleep 5
-ExecStart=/usr/bin/chromium-browser --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --incognito http://localhost:8080
+ExecStart=/usr/bin/chromium --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --incognito http://localhost:8080
 Restart=on-failure
 RestartSec=5
 
