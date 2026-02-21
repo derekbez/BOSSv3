@@ -126,6 +126,10 @@ class SystemManager:
             self._runner.stop()
 
         await self._bus.stop()
+
+        # Release GPIO / hardware resources (no-op on mock).
+        self._factory.cleanup()
+
         _log.info("SystemManager shutdown complete")
 
     async def _on_shutdown_requested(self, event: Event) -> None:

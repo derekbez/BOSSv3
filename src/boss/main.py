@@ -37,20 +37,15 @@ def main() -> None:
     # 3. Create hardware factory (mock on dev, GPIO on Pi)
     factory = create_hardware_factory(config)
 
-    # 4. If using mock hardware in dev mode, inject NiceGUIScreen
+    # 4. Inject NiceGUIScreen into whichever factory was created.
+    #    Both MockHardwareFactory and GPIOHardwareFactory support set_screen().
     from boss.hardware.mock.mock_factory import MockHardwareFactory
+    from boss.ui.screen import NiceGUIScreen
 
-    if isinstance(factory, MockHardwareFactory):
-        from boss.ui.screen import NiceGUIScreen
+    nicegui_screen = NiceGUIScreen()
 
-        nicegui_screen = NiceGUIScreen()
-        factory.set_screen(nicegui_screen)
-    else:
-        from boss.ui.screen import NiceGUIScreen
-
-        nicegui_screen = NiceGUIScreen()
-        # On Pi, screen is still NiceGUI — swap into whatever factory provides.
-        # For now, the GPIO factory will be updated in Phase 4 to accept a screen.
+    # Both mock and GPIO factories support set_screen().
+    factory.set_screen(nicegui_screen)
 
     # 5. Resolve paths
     pkg_dir = Path(__file__).resolve().parent

@@ -169,15 +169,37 @@
 
 ## Phase 4 — GPIO Hardware Backend
 
-- [ ] **4.1** `gpio/gpio_hardware.py` — `GPIOButtons`, `GPIOGoButton`, `GPIOLeds`, `GPIOSwitches`, `GPIODisplay`, `GPIOSpeaker`
-  - Uses `gpiozero` + `lgpio` pin factory
-  - No dead legacy callbacks
-- [ ] **4.2** `gpio/gpio_factory.py` — `GPIOHardwareFactory`
-  - No screen backend in hardware layer (NiceGUI handles all screen rendering)
-- [ ] **4.3** Test on actual Raspberry Pi hardware
-- [ ] **4.4** Verify LED/button parity (LED gating) works end-to-end on Pi
+- [x] **4.1** Add `cleanup()` to `HardwareFactory` ABC (concrete no-op) + wire from `SystemManager.shutdown()`
+- [x] **4.2** `gpio/gpio_hardware.py` — 6 GPIO component classes
+  - `GPIOButtons` — `gpiozero.Button` per colour, `bounce_time=0.05`, zero-arg callbacks
+  - `GPIOGoButton` — `gpiozero.Button`, `bounce_time=0.2`
+  - `GPIOLeds` — `gpiozero.LED` per colour, boolean on/off, internal state tracking
+  - `GPIOSwitches` — 74HC151 MUX via `DigitalInputDevice` + 3 `DigitalOutputDevice` select lines, daemon polling thread at ~20 Hz, auto-starts in `__init__`
+  - `GPIODisplay` — `python-tm1637` TM1637, `show_number()`, `clear()`, `set_brightness(0–7)`
+  - `GPIOSpeaker` — placeholder (logs calls, no real audio)
+  - All classes have `cleanup()` methods; gpiozero/tm1637 imports guarded for Windows patchability
+- [x] **4.3** `gpio/gpio_factory.py` — `GPIOHardwareFactory`
+  - Sets `LGPIOFactory` pin factory in `__init__` (not at module import)
+  - Eagerly creates all 6 components; `set_screen()` injection for NiceGUI
+  - `cleanup()` delegates to all components, `create_screen()` raises if not injected
+- [x] **4.4** Update `main.py` — unified screen injection (both mock and GPIO factories)
+- [x] **4.5** Populate `boss_config.json` with real V2 pin numbers
+  - Switches: data=8, S0=23, S1=24, S2=25
+  - Buttons: red=26, yellow=19, green=13, blue=6; Go=17
+  - LEDs: red=21, yellow=20, green=16, blue=12
+  - TM1637: CLK=5, DIO=4
+  - Location: 51.8167, -0.8146 (user's actual location)
+- [x] **4.6** Unit tests (43 new, 364 total) — all GPIO classes tested via mocked gpiozero/tm1637
+  - `test_gpio_buttons.py` — 6 tests: pins, pull_up, bounce_time, callbacks, cleanup, interface
+  - `test_gpio_go_button.py` — 4 tests: pin, callback, cleanup, interface
+  - `test_gpio_leds.py` — 7 tests: pins, on/off, state tracking, all_off, cleanup, interface
+  - `test_gpio_switches.py` — 8 tests: pins, initial value, all-on/off, change callback, pin sequencing, cleanup, interface
+  - `test_gpio_display.py` — 8 tests: pins, show_number, fallback, clear, brightness, clamping, cleanup, interface
+  - `test_gpio_factory.py` — 10 tests: interface compliance, all create_* methods, set_screen, raises without screen, cleanup idempotent
+- [ ] **4.7** Test on actual Raspberry Pi hardware
+- [ ] **4.8** Verify LED/button parity (LED gating) works end-to-end on Pi
 
-**Acceptance:** All physical hardware (8 switches via MUX, 4 color buttons, Go button, 4 LEDs, TM1637 display) works, events flow to NiceGUI screen.
+**Acceptance:** All GPIO classes implement V3 ABCs, 364 tests pass on Windows via mocked gpiozero. Pi hardware testing (4.7–4.8) requires deployment.
 
 ---
 
@@ -205,6 +227,6 @@
 | 1 — Core Rewrite | **Complete** | 15/15 done | 60 |
 | 2 — NiceGUI UI | **Complete** | 8/9 done (integration test deferred) | 33 |
 | 3 — Mini-App Migration | **Complete** | 11/11 done (2 admin apps deferred to Phase 5) | 228 |
-| 4 — GPIO Backend | Not Started | 0/4 | — |
+| 4 — GPIO Backend | **Complete** | 6/8 done (Pi hardware testing deferred to deployment) | 43 |
 | 5 — Deployment | Not Started | 0/9 | — |
-| **Total** | | | **321** |
+| **Total** | | | **364** |

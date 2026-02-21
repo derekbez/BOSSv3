@@ -177,3 +177,6 @@ class HardwareFactory(ABC):
 
     @abstractmethod
     def create_speaker(self) -> SpeakerInterface: ...
+
+    def cleanup(self) -> None:
+        """Release hardware resources.  No-op by default (mock)."""
