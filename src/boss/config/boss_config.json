@@ -1,0 +1,24 @@
+{
+  "hardware": {
+    "switch_pins": {},
+    "mux_pins": {},
+    "button_pins": { "red": 0, "yellow": 0, "green": 0, "blue": 0 },
+    "go_button_pin": 0,
+    "led_pins": { "red": 0, "yellow": 0, "green": 0, "blue": 0 },
+    "display_clk_pin": 0,
+    "display_dio_pin": 0,
+    "screen_width": 1024,
+    "screen_height": 600,
+    "audio_enabled": true
+  },
+  "system": {
+    "default_timeout_seconds": 900,
+    "log_level": "INFO",
+    "log_dir": "logs",
+    "event_bus_queue_size": 1000,
+    "webui_port": 8080,
+    "location": { "lat": 51.5074, "lon": -0.1278 },
+    "dev_mode": false,
+    "test_mode": false
+  }
+}

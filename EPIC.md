@@ -12,8 +12,8 @@
 - [x] **0.3** Scaffold directory structure (core, hardware, ui, apps, config, logging, tests)
 - [x] **0.4** Create `__init__.py` files for all packages
 - [x] **0.5** Create `.gitignore`, `README.md`
-- [ ] **0.6** Create venv, install deps (`pip install -e ".[dev]"`)
-- [ ] **0.7** Verify `python -c "import boss"` works
+- [x] **0.6** Create venv, install deps (`pip install -e ".[dev]"`)
+- [x] **0.7** Verify `python -c "import boss"` works
 - [x] **0.8** Set up Copilot instructions (`.github/instructions/`, `.github/copilot-instructions.md`)
 
 **Acceptance:** `pip install -e ".[dev]"` succeeds, `import boss` works, `pytest` runs (0 tests collected is fine).
@@ -22,33 +22,58 @@
 
 ## Phase 1 — Core Rewrite
 
-- [ ] **1.1** Pydantic models: `BossConfig`, `HardwareConfig`, `SystemConfig`
+- [x] **1.1** Pydantic models: `BossConfig`, `HardwareConfig`, `SystemConfig`
   - Loads from `boss_config.json`, env overrides, validation
-- [ ] **1.2** Pydantic models: `AppManifest` with explicit `config: dict[str, Any] = {}`
+  - File: `core/models/config.py` — `LocationConfig`, `HardwareConfig`, `SystemConfig`, `BossConfig`
+  - All use `extra="forbid"`, `dev_mode`/`test_mode` on `SystemConfig`
+- [x] **1.2** Pydantic models: `AppManifest` with explicit `config: dict[str, Any] = {}`
   - Fixes v2 config-drop bug; legacy manifest migration
-- [ ] **1.3** Pydantic models: `HardwareState`, `LedColor`, `ButtonColor`, `AppStatus`
-- [ ] **1.4** Hardware ABCs: `ButtonInterface`, `GoButtonInterface`, `LedInterface`, `SwitchInterface`, `DisplayInterface`, `ScreenInterface`, `SpeakerInterface`, `HardwareFactory`
-  - Clean ScreenInterface: `display_text()`, `display_html()`, `display_image()`, `clear()`
+  - File: `core/models/manifest.py` — includes `required_env: list[str]`, `migrate_manifest_v2()`
+- [x] **1.3** Pydantic models: `HardwareState`, `LedColor`, `ButtonColor`, `AppStatus`, `Event`
+  - Files: `core/models/state.py`, `core/models/event.py`
+  - `AppStatus` enum: IDLE, LAUNCHING, RUNNING, FINISHED, ERROR, TIMED_OUT
+- [x] **1.4** Hardware ABCs: `ButtonInterface`, `GoButtonInterface`, `LedInterface`, `SwitchInterface`, `DisplayInterface`, `ScreenInterface`, `SpeakerInterface`, `HardwareFactory`
+  - File: `core/interfaces/hardware.py`
+  - Clean ScreenInterface: `display_text()`, `display_html()`, `display_image()`, `display_markdown()`, `clear()`
   - No `wrap`/`wrap_width` on interface — that's the UI layer's job
-- [ ] **1.5** Config manager: load JSON → apply env overrides → validate → return `BossConfig`
-- [ ] **1.6** Secrets manager: thread-safe lazy loader, env > file > default
-- [ ] **1.7** Async event bus
+  - `SpeakerInterface` minimal placeholder (deferred to Phase 4)
+- [x] **1.5** Config manager: load JSON → apply env overrides → validate → return `BossConfig`
+  - File: `config/config_manager.py` — `load_config()`
+  - Env overrides: `BOSS_LOG_LEVEL`, `BOSS_DEV_MODE`, `BOSS_TEST_MODE`, `BOSS_WEBUI_PORT`
+- [x] **1.6** Secrets manager: thread-safe lazy loader, env > file > default
+  - File: `config/secrets_manager.py` — `SecretsManager.get(key, default)`
+  - Thread-safe via double-checked locking; `KEY=VALUE` file format
+- [x] **1.7** Async event bus
+  - File: `core/event_bus.py` — `EventBus` class
   - `asyncio.Queue`-based, handler dispatch on event loop
   - `publish_threadsafe()` for GPIO callback threads
-  - `subscribe(event_type, handler, filter_dict=None)`
-  - Auto-unsubscribe on handler error
-  - Unit tests for subscribe/publish/filter/threadsafe/error-removal
-- [ ] **1.8** App manager: scan `apps/` dirs, load manifests, bind to `app_mappings.json`, validate `required_env`
-- [ ] **1.9** App runner: daemon thread per app, cooperative cancellation, timeout monitor, lifecycle events
-- [ ] **1.10** AppLauncher: Go-button → snapshot switch → transition feedback → launch app → post-app cleanup
-- [ ] **1.11** HardwareEventBridge: wire hardware callbacks → event bus (LED gating for buttons)
-- [ ] **1.12** SystemManager: startup + shutdown orchestration only (~100 lines)
-- [ ] **1.13** AppAPI: scoped event bus, screen API, hardware API, config access, logging
+  - `subscribe(event_type, handler, filter_dict=None)` — AND-matched filter
+  - Auto-unsubscribe on handler error; bounded queue with drop-oldest overflow
+  - Event constants: `core/events.py` (14 event types)
+  - Unit tests for subscribe/publish/filter/threadsafe/error-removal/overflow
+- [x] **1.8** App manager: scan `apps/` dirs, load manifests, bind to `app_mappings.json`, validate `required_env`
+  - File: `core/app_manager.py` — `AppManager` class
+- [x] **1.9** App runner: daemon thread per app, cooperative cancellation, timeout monitor, lifecycle events
+  - File: `core/app_runner.py` — `AppRunner` class; one app at a time
+- [x] **1.10** AppLauncher: Go-button → snapshot switch → transition feedback → launch app → post-app cleanup
+  - File: `core/app_launcher.py` — subscribes to `input.go_button.pressed`
+- [x] **1.11** HardwareEventBridge: wire hardware callbacks → event bus (LED gating for buttons)
+  - File: `core/hardware_event_bridge.py` — tracks LED states, gates button presses
+- [x] **1.12** SystemManager: startup + shutdown orchestration only (~100 lines)
+  - File: `core/system_manager.py` — `start()` / `shutdown()` lifecycle
+- [x] **1.13** AppAPI: scoped event bus, screen API, hardware API, config access, logging
+  - File: `core/app_api.py` — `AppAPI`, `_ScopedEventBus`, `_HardwareAPI`
   - `get_app_config()` returns manifest `config`; `get_config_value()` with defaults
-  - `get_global_location()` resolution
-  - `get_app_path()`, `get_asset_path()`
-- [ ] **1.14** Logging: `setup_logging()`, `ContextualLogger`, rotating file handler
-- [ ] **1.15** Unit tests for all Phase 1 modules
+  - `get_global_location()` resolution; `get_app_path()`, `get_asset_path()`
+  - Scoped event bus auto-unsubscribes on cleanup
+- [x] **1.14** Logging: `setup_logging()`, `ContextualLogger`, rotating file handler
+  - File: `logging/logger.py` — avoids stdlib `logging` shadow with `import logging as _logging`
+  - RotatingFileHandler: 5 MB max, 3 backups
+- [x] **1.15** Unit tests for all Phase 1 modules (60 tests)
+  - `test_config_models.py`, `test_manifest.py`, `test_event_bus.py`
+  - `test_config_manager.py`, `test_secrets_manager.py`
+  - `test_app_manager.py`, `test_app_runner.py`, `test_app_api.py`
+  - Test helpers: `helpers/runtime.py` (`wait_for`), `helpers/app_scaffold.py` (`create_app`)
 
 **Acceptance:** All core modules importable, unit tests green, event bus handles async + threadsafe publish, config round-trips correctly, manifest `config` field preserved.
 
@@ -147,8 +172,8 @@
 
 | Phase | Status | Tasks |
 |-------|--------|-------|
-| 0 — Foundation | **In Progress** | 6/8 done |
-| 1 — Core Rewrite | Not Started | 0/15 |
+| 0 — Foundation | **Complete** | 8/8 done |
+| 1 — Core Rewrite | **Complete** | 15/15 done |
 | 2 — NiceGUI UI | Not Started | 0/8 |
 | 3 — Mini-App Migration | Not Started | 0/16 |
 | 4 — GPIO Backend | Not Started | 0/4 |
