@@ -134,13 +134,14 @@ git clone https://github.com/derekbez/BOSSv3.git /opt/boss
 
 ```bash
 cd /opt/boss
-python3 -m venv .venv
+python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -e ".[pi]"
 ```
 
-The `[pi]` extra installs Raspberry Pi hardware libraries (`gpiozero`, `lgpio`, `python-tm1637`).
+The `--system-site-packages` flag lets the venv see system-installed libraries (e.g. `lgpio`).
+The `[pi]` extra installs Raspberry Pi hardware libraries (`gpiozero`, `rpi-lgpio`, `python-tm1637`).
 
 > **Python version:** The Pi ships with Python 3.13. The project requires Python 3.11+, so this works out of the box — no need to install a different Python.
 
