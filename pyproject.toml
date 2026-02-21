@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "boss"
+version = "3.0.0"
+description = "B.O.S.S. (Board Of Switches and Screen) — A modular Raspberry Pi mini-app platform"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Derek Bez" }]
+
+dependencies = [
+    "nicegui>=2.0,<3",
+    "requests>=2.32,<3",
+    # pydantic is bundled with nicegui, but pin explicitly for model use
+    "pydantic>=2.0,<3",
+]
+
+[project.optional-dependencies]
+# Raspberry Pi hardware — install on Pi only: pip install -e ".[pi]"
+pi = [
+    "gpiozero>=2.0",
+    "lgpio>=0.6",
+    "python-tm1637>=1.3",
+]
+dev = [
+    "pytest>=8.4,<9",
+    "pytest-cov>=5,<6",
+    "pytest-asyncio>=0.24,<1",
+    "ruff>=0.8",
+]
+
+[project.scripts]
+boss = "boss.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/boss"]
+
+# --- Tool configs ---
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "pi_only: requires Raspberry Pi hardware",
+    "live_api: calls real external APIs",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.ruff.format]
+quote-style = "double"
