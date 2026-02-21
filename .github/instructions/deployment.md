@@ -1,20 +1,25 @@
 # Deployment
 
+> **Full step-by-step setup guide:** [`deploy/PI_SETUP.md`](../../deploy/PI_SETUP.md)
+
 ## Target Platform
 
 - Raspberry Pi 4 or 5
-- Pi OS Desktop (64-bit Bookworm)
+- Pi OS Desktop (64-bit) — Debian Trixie based
 - HDMI display (1024×600 or similar)
 - No keyboard/mouse — GPIO buttons and switches only
 
-## Pi OS Setup
+## Pi OS Setup (Summary)
 
-1. Flash Pi OS Desktop (64-bit) via Raspberry Pi Imager
-2. Enable SSH, set hostname to `boss`
+1. Flash Pi OS Desktop (64-bit) via Raspberry Pi Imager — choose the Trixie-based image
+2. In Imager OS Customisation: set hostname `boss`, enable SSH, configure Wi-Fi
 3. `sudo raspi-config`:
    - Boot → Desktop Autologin
    - Display → Disable Screen Blanking
+   - Interface → Enable SPI and I2C
    - (Optional) Advanced → Switch to X11 if using `unclutter`
+
+See `deploy/PI_SETUP.md` for complete walkthrough including secrets, kiosk, and troubleshooting.
 
 ## Systemd Services
 
