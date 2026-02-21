@@ -81,35 +81,56 @@
 
 ## Phase 2 — NiceGUI UI Layer
 
-- [ ] **2.1** `ui/screen.py` — `NiceGUIScreen` implementing `ScreenInterface`
-  - `display_text()` → marshals to event loop → renders `ui.label`/`ui.html`
+- [x] **2.1** `ui/screen.py` — `NiceGUIScreen` implementing `ScreenInterface`
+  - File: `ui/screen.py` — thread-safe via `run_coroutine_threadsafe`
+  - `display_text()` → renders styled `ui.html` with `_escape_html`
   - `display_html()` → renders arbitrary HTML
-  - `display_image()` → renders `ui.image` (real image rendering!)
+  - `display_image()` → renders `ui.image` (real image rendering)
   - `display_markdown()` → renders `ui.markdown`
   - `clear()` → clears container
-  - Thread-safe: all calls from mini-app threads marshal via `run_coroutine_threadsafe`
-- [ ] **2.2** `ui/layout.py` — main page with `@ui.page('/')`
-  - Full-screen app container
-  - Status bar (switch value, active app, system state)
-  - Dark theme
-- [ ] **2.3** `ui/dev_panel.py` — dev-mode hardware simulation
-  - Virtual buttons (red, yellow, green, blue, Go)
-  - Switch slider (0–255) with binary display
-  - LED indicators with color glow
-  - 7-segment display readout
-  - Only rendered when `is_pi = False`
-- [ ] **2.4** `main.py` — composition root
-  - Config → EventBus → HardwareFactory → Hardware → AppManager → SystemManager
-  - `app.on_startup` hook for initialization
-  - `ui.run()` blocks main thread
-- [ ] **2.5** Mock hardware backend (`hardware/mock/`)
-  - All interfaces implemented with in-memory state
-  - `simulate_press()`, `simulate_switch_change()` for testing
-- [ ] **2.6** Hardware factory (`hardware/factory.py`)
-  - Detects gpio vs mock (no webui backend)
-  - On Windows/non-Pi → mock + dev panel
-- [ ] **2.7** Integration: run `python -m boss.main` on Windows, see NiceGUI page in browser with dev panel
-- [ ] **2.8** Integration tests using `nicegui.testing`
+  - `bind_container()` captures NiceGUI element + event loop
+  - `_SCREEN_STYLE`: 800×480 / 5:3 aspect, black bg, monospace
+- [x] **2.2** `ui/layout.py` — main page with `@ui.page('/')`
+  - File: `ui/layout.py` — `BossLayout` class
+  - Dark theme via `ui.dark_mode().enable()`
+  - Status bar: switch value (decimal + binary), active app name, system state
+  - App screen container with 5:3 aspect ratio, border, dark background
+  - Event subscriptions: SWITCH_CHANGED, APP_STARTED, APP_FINISHED, APP_ERROR, SYSTEM_STARTED
+- [x] **2.3** `ui/dev_panel.py` — dev-mode hardware simulation
+  - File: `ui/dev_panel.py` — `DevPanel` class
+  - Virtual buttons (red, yellow, green, blue) routed through `MockButtons.simulate_press()`
+  - Go button routed through `MockGoButton.simulate_press()`
+  - Switch slider (0–255) with binary display, routed through `MockSwitches.simulate_change()`
+  - LED indicators with colour glow effect on/off
+  - 7-segment display readout (green monospace, text-shadow glow)
+  - Keyboard shortcuts: 1-4 (buttons), Space (Go), Up/Down (switch), R (reset), M (max)
+  - All actions route through mock hardware objects — full LED-gating fidelity
+  - Event subscriptions: LED_STATE_CHANGED, DISPLAY_UPDATED, SWITCH_CHANGED
+  - Collapsible `ui.expansion` panel, default opened
+- [x] **2.4** `main.py` — NiceGUI composition root
+  - File: `main.py` — `main()` function
+  - Config → EventBus → HardwareFactory → NiceGUIScreen → SystemManager → Layout → DevPanel
+  - `app.on_startup` starts SystemManager, `app.on_shutdown` shuts it down
+  - `ui.run()` blocks main thread (port from config, no reload, no auto-show)
+  - Dev mode: overrides `@ui.page('/')` to include both layout + dev panel
+- [x] **2.5** Mock hardware backend (`hardware/mock/`)
+  - `mock_screen.py` — `InMemoryScreen`: stores last_text/html/image/markdown, cleared flag, call_log
+  - `mock_hardware.py` — `MockButtons`, `MockGoButton`, `MockLeds`, `MockSwitches`, `MockDisplay`, `MockSpeaker`
+  - All with `simulate_*()` helpers for dev panel and tests
+  - `MockSwitches` clamps 0–255, skips callback when value unchanged
+  - `MockDisplay` clamps brightness 0–7
+- [x] **2.6** Hardware factory (`hardware/factory.py`)
+  - File: `hardware/factory.py` — `create_hardware_factory(config)`
+  - Detects Pi via `/sys/firmware/devicetree/base/model` device-tree check
+  - `dev_mode=True` or non-Pi → `MockHardwareFactory`
+  - Pi → `GPIOHardwareFactory` (Phase 4, falls back to mock if not available)
+  - `mock_factory.py` — `MockHardwareFactory` with `set_screen()` injection
+- [x] **2.7** Integration: `python -m boss.main` launches NiceGUI on `:8080` with dev panel on Windows
+- [ ] **2.8** Integration tests using `nicegui.testing` (deferred — manual smoke test sufficient for now)
+- [x] **2.9** Unit tests for mock hardware (33 tests)
+  - `test_in_memory_screen.py` — 7 tests: all display methods, clear, call_log
+  - `test_mock_hardware.py` — 20 tests: all mock classes with simulate helpers
+  - `test_mock_factory.py` — 6 tests: interface conformance, set_screen, attribute access
 
 **Acceptance:** `python -m boss.main` launches NiceGUI on `:8080`, browser shows main screen + dev panel, clicking virtual Go button triggers app launch flow, LED indicators update in real-time.
 
@@ -174,7 +195,7 @@
 |-------|--------|-------|
 | 0 — Foundation | **Complete** | 8/8 done |
 | 1 — Core Rewrite | **Complete** | 15/15 done |
-| 2 — NiceGUI UI | Not Started | 0/8 |
+| 2 — NiceGUI UI | **Complete** | 8/9 done (integration test deferred) |
 | 3 — Mini-App Migration | Not Started | 0/16 |
 | 4 — GPIO Backend | Not Started | 0/4 |
 | 5 — Deployment | Not Started | 0/9 |
