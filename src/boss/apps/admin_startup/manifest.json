@@ -1,0 +1,10 @@
+{
+    "name": "admin_startup",
+    "author": "B.O.S.S. Team",
+    "version": "1.0.0",
+    "description": "System app that runs on startup to show readiness.",
+    "entry_point": "main.py",
+    "timeout_behavior": "return",
+    "timeout_seconds": 30,
+    "tags": ["admin", "system"]
+}

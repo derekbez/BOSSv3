@@ -136,26 +136,34 @@
 
 ---
 
-## Phase 3 — Mini-App Migration
+## Phase 3 — Mini-App Framework & Migration
 
-- [ ] **3.1** Port `_error_utils.py` (HTTP error summarization)
-- [ ] **3.2** Migrate `hello_world` — baseline test that buttons, LEDs, screen work
-- [ ] **3.3** Migrate `list_all_apps` — fix hardcoded `per_page`, use manifest config
-- [ ] **3.4** Migrate `admin_startup` — remove `**kwargs`, clean signature
-- [ ] **3.5** Migrate `admin_shutdown` — menu-driven shutdown/reboot/exit
-- [ ] **3.6** Migrate `app_jokes` — static asset loading
-- [ ] **3.7** Migrate `current_weather` — network + periodic refresh
-- [ ] **3.8** Migrate remaining network apps: `dad_joke_generator`, `word_of_the_day`, `quote_of_the_day`, `random_useless_fact`, `on_this_day`, `breaking_news`, `space_update`, `top_trending_search`
-- [ ] **3.9** Migrate remaining static apps: `tiny_poem`, `random_emoji_combo`, `random_local_place_name`, `public_domain_book_snippet`, `today_in_music`, `color_of_the_day`
-- [ ] **3.10** Migrate specialty apps: `moon_phase`, `local_tide_times`, `constellation_of_the_night`, `internet_speed_check`
-- [ ] **3.11** Migrate flight apps: `flights_leaving_heathrow`, `flight_status_favorite_airline`
-- [ ] **3.12** Migrate `admin_wifi_configuration`, `admin_boss_admin`
-- [ ] **3.13** Migrate `bird_sightings_near_me`, `name_that_animal`, `joke_of_the_moment`
-- [ ] **3.14** Copy `app_mappings.json` and `boss_config.json` (adapted for v3)
-- [ ] **3.15** Smoke tests for all migrated apps
-- [ ] **3.16** Standardize all apps' `finally` cleanup blocks
+- [x] **3.1** Enhance core API — `AppAPI.get_secret()`, `_ScopedEventBus.publish_threadsafe()`, `AppAPI.get_all_app_summaries()`
+  - `AppLauncher` now accepts `secrets`, builds `app_summaries` from switch map
+  - `SystemManager` passes secrets to launcher
+- [x] **3.2** Enhance `migrate_manifest_v2()` — strip `external_apis`, map `timeout_behavior` `"none"`/`"rerun"` → `"return"` with 900s timeout
+- [x] **3.3** Create shared `_lib` library (`apps/_lib/`)
+  - `error_utils.py` — `summarize_error()` for requests exceptions (timeout, DNS, SSL, etc.)
+  - `paginator.py` — `TextPaginator` with LED callbacks, `wrap_plain()`, `wrap_with_prefix()`, `wrap_events()`, `wrap_paragraphs()`
+  - `http_helpers.py` — `fetch_json()` with retry/backoff, `fetch_text()`
+- [x] **3.4** Migrate system/utility apps: `hello_world`, `list_all_apps`, `admin_startup`
+- [x] **3.5** Migrate `admin_shutdown` — menu-driven shutdown/reboot/exit via `publish_threadsafe`
+- [x] **3.6** Migrate 13 simple network apps: `dad_joke_generator`, `quote_of_the_day`, `random_useless_fact`, `color_of_the_day`, `name_that_animal`, `tiny_poem`, `today_in_music`, `word_of_the_day`, `flights_leaving_heathrow`, `flight_status_favorite_airline`, `moon_phase`, `space_update`, `local_tide_times`
+- [x] **3.7** Migrate 3 pagination apps: `breaking_news`, `bird_sightings_near_me`, `on_this_day` — Yellow=prev / Green=refresh / Blue=next
+- [x] **3.8** Migrate 4 static/asset apps: `app_jokes`, `random_emoji_combo`, `random_local_place_name`, `public_domain_book_snippet`
+  - Assets copied from v2: `jokes.json`, `emoji.json`, `places.json`, `sample.txt`
+- [x] **3.9** Migrate 5 special-case apps: `current_weather` (Open-Meteo, no key), `top_trending_search` (rewritten for SerpApi), `internet_speed_check` (placeholder), `constellation_of_the_night` (static), `joke_of_the_moment` (JokeAPI two-part reveal)
+- [x] **3.10** Update `app_mappings.json` — 29 apps mapped, removed `admin_wifi_configuration` (252) and `admin_boss_admin` (254) → deferred to Phase 5
+- [x] **3.11** Unit tests (228 new tests, 321 total)
+  - `test_error_utils.py` — 11 tests for `summarize_error`
+  - `test_paginator.py` — 15 tests for paginator and wrap helpers
+  - `test_http_helpers.py` — 6 tests for `fetch_json`/`fetch_text` with mocked requests
+  - `test_manifest_scan.py` — parametrized over all 29 apps (exists, valid JSON, parses, entry_point, defines `run()`)
+  - `test_app_smoke.py` — import tests for all 29 apps + run smoke tests for 10 local-only apps
+  - `test_app_api_phase3.py` — tests for `get_secret`, `get_all_app_summaries`, `publish_threadsafe`
+  - `test_manifest_migration.py` — tests for enhanced `migrate_manifest_v2`
 
-**Acceptance:** All ~30 apps migrated, each has `run(stop_event, api)` + `manifest.json`, smoke tests pass, no direct hardware imports in any app.
+**Acceptance:** 29 apps migrated, each has `run(stop_event, api)` + `manifest.json`, all 321 tests pass, no direct hardware imports in any app. 2 admin apps deferred to Phase 5.
 
 ---
 
@@ -191,11 +199,12 @@
 
 ## Progress Summary
 
-| Phase | Status | Tasks |
-|-------|--------|-------|
-| 0 — Foundation | **Complete** | 8/8 done |
-| 1 — Core Rewrite | **Complete** | 15/15 done |
-| 2 — NiceGUI UI | **Complete** | 8/9 done (integration test deferred) |
-| 3 — Mini-App Migration | Not Started | 0/16 |
-| 4 — GPIO Backend | Not Started | 0/4 |
-| 5 — Deployment | Not Started | 0/9 |
+| Phase | Status | Tasks | Tests |
+|-------|--------|-------|-------|
+| 0 — Foundation | **Complete** | 8/8 done | — |
+| 1 — Core Rewrite | **Complete** | 15/15 done | 60 |
+| 2 — NiceGUI UI | **Complete** | 8/9 done (integration test deferred) | 33 |
+| 3 — Mini-App Migration | **Complete** | 11/11 done (2 admin apps deferred to Phase 5) | 228 |
+| 4 — GPIO Backend | Not Started | 0/4 | — |
+| 5 — Deployment | Not Started | 0/9 | — |
+| **Total** | | | **321** |

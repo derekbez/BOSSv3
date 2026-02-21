@@ -100,6 +100,7 @@ class SystemManager:
             display=display,
             screen=screen,
             config=self._config,
+            secrets=self._secrets,
         )
 
         # 6. Subscribe to shutdown requests

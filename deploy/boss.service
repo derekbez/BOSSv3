@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=pi
+User=rpi
 WorkingDirectory=/opt/boss
 ExecStart=/opt/boss/.venv/bin/python -m boss.main
 Restart=on-failure

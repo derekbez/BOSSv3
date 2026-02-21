@@ -46,18 +46,43 @@ class AppManifest(BaseModel):
 
 # Keys that changed between v2 → v3 manifests.  Mapping is {old_key: new_key}.
 _V2_RENAMES: dict[str, str] = {
-    # Add entries here when v2 manifests used a different key name.
     # e.g.  "timeout": "timeout_seconds",
+}
+
+# Top-level keys to silently strip (present in some v2 manifests but
+# forbidden by v3's ``extra="forbid"``).
+_V2_STRIP_KEYS: set[str] = {
+    "external_apis",
 }
 
 
 def migrate_manifest_v2(raw: dict[str, Any]) -> dict[str, Any]:
     """Apply v2 → v3 key renames so old manifests still parse.
 
+    - Renames legacy keys (see ``_V2_RENAMES``).
+    - Strips top-level keys that v3 doesn't recognise (``_V2_STRIP_KEYS``).
+    - Maps ``timeout_behavior`` values ``"none"`` / ``"rerun"`` → ``"return"``
+      and bumps ``timeout_seconds`` to 900 when appropriate.
+
     Returns a **new** dict (the input is not mutated).
     """
     out = dict(raw)
+
+    # 1. Rename legacy keys
     for old_key, new_key in _V2_RENAMES.items():
         if old_key in out and new_key not in out:
             out[new_key] = out.pop(old_key)
+
+    # 2. Strip forbidden top-level keys
+    for key in _V2_STRIP_KEYS:
+        out.pop(key, None)
+
+    # 3. Fix timeout_behavior
+    tb = out.get("timeout_behavior", "return")
+    if tb in ("none", "rerun"):
+        out["timeout_behavior"] = "return"
+        # These apps were intended to run indefinitely — give them a generous timeout
+        if "timeout_seconds" not in out or out.get("timeout_seconds", 120) < 600:
+            out["timeout_seconds"] = 900
+
     return out

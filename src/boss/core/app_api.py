@@ -6,6 +6,7 @@ import logging as _logging
 from pathlib import Path
 from typing import Any
 
+from boss.config.secrets_manager import SecretsManager
 from boss.core.event_bus import EventBus
 from boss.core.events import LED_STATE_CHANGED
 from boss.core.interfaces.hardware import LedInterface, ScreenInterface
@@ -40,6 +41,12 @@ class _ScopedEventBus:
             self._sub_ids.remove(sub_id)
         except ValueError:
             pass
+
+    def publish_threadsafe(
+        self, event_type: str, payload: dict[str, Any] | None = None
+    ) -> None:
+        """Publish an event from the app's daemon thread."""
+        self._bus.publish_threadsafe(event_type, payload)
 
     def cleanup(self) -> None:
         """Unsubscribe all remaining subscriptions for this app."""
@@ -85,11 +92,15 @@ class AppAPI:
         screen: ScreenInterface,
         leds: LedInterface,
         config: BossConfig,
+        secrets: SecretsManager | None = None,
+        app_summaries: list[dict[str, Any]] | None = None,
     ) -> None:
         self._app_name = app_name
         self._app_dir = app_dir
         self._manifest = manifest
         self._config = config
+        self._secrets = secrets
+        self._app_summaries = app_summaries or []
 
         # Sub-APIs
         self.screen: ScreenInterface = screen
@@ -118,6 +129,26 @@ class AppAPI:
         """Return the system-wide location as ``{"lat": …, "lon": …}``."""
         loc = self._config.system.location
         return {"lat": loc.lat, "lon": loc.lon}
+
+    # ------------------------------------------------------------------
+    # Secrets access
+    # ------------------------------------------------------------------
+
+    def get_secret(self, key: str, default: str = "") -> str:
+        """Return a secret / env-var value, or *default* if not set."""
+        if self._secrets is None:
+            return default
+        return self._secrets.get(key, default)
+
+    # ------------------------------------------------------------------
+    # App directory (for list_all_apps)
+    # ------------------------------------------------------------------
+
+    def get_all_app_summaries(self) -> list[dict[str, Any]]:
+        """Return ``[{"switch": int, "name": str, "description": str}, …]``
+        for every app mapped to a switch value.  Sorted by switch number.
+        """
+        return list(self._app_summaries)
 
     # ------------------------------------------------------------------
     # Path helpers

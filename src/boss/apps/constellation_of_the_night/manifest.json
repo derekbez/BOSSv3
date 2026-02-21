@@ -1,0 +1,12 @@
+{
+    "name": "constellation_of_the_night",
+    "description": "Shows a placeholder constellation message.",
+    "version": "0.1.0",
+    "author": "BOSS Team",
+    "entry_point": "main.py",
+    "timeout_seconds": 60,
+    "requires_network": false,
+    "tags": ["content"],
+    "timeout_behavior": "return",
+    "config": { "message": "Orion visible tonight!" }
+}

@@ -1,0 +1,12 @@
+{
+    "name": "random_local_place_name",
+    "description": "Random place name from local asset list.",
+    "version": "1.0.0",
+    "author": "BOSS Team",
+    "entry_point": "main.py",
+    "timeout_seconds": 90,
+    "requires_network": false,
+    "tags": ["novelty", "utility"],
+    "timeout_behavior": "return",
+    "config": {}
+}

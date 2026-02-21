@@ -1,0 +1,12 @@
+{
+    "name": "dad_joke_generator",
+    "description": "Shows a random dad joke (icanhazdadjoke).",
+    "version": "1.0.0",
+    "author": "BOSS Team",
+    "entry_point": "main.py",
+    "timeout_seconds": 90,
+    "requires_network": true,
+    "tags": ["novelty", "network"],
+    "timeout_behavior": "return",
+    "config": { "request_timeout_seconds": 6, "refresh_seconds": 90 }
+}

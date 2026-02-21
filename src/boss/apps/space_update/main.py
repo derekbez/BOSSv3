@@ -1,0 +1,76 @@
+"""Space Update — NASA APOD or Mars Curiosity.  Green = refresh."""
+
+from __future__ import annotations
+
+import random
+import time
+from threading import Event
+from typing import Any
+
+from boss.apps._lib.http_helpers import fetch_json
+
+APOD_URL = "https://api.nasa.gov/planetary/apod"
+MARS_URL = "https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/latest_photos"
+
+
+def _fetch_apod(api_key: str, timeout: float) -> str:
+    data = fetch_json(APOD_URL, params={"api_key": api_key}, timeout=timeout)
+    title = data.get("title", "?")
+    explanation = data.get("explanation", "")
+    date = data.get("date", "")
+    snippet = explanation[:200] + "…" if len(explanation) > 200 else explanation
+    return f"NASA APOD ({date})\n\n{title}\n\n{snippet}"
+
+
+def _fetch_mars(api_key: str, timeout: float) -> str:
+    data = fetch_json(MARS_URL, params={"api_key": api_key}, timeout=timeout)
+    photos = data.get("latest_photos", [])
+    if not photos:
+        return "Mars Curiosity\n\n(no recent photos)"
+    p = photos[0]
+    camera = p.get("camera", {}).get("full_name", "?")
+    earth_date = p.get("earth_date", "?")
+    sol = p.get("sol", "?")
+    return f"Mars Curiosity\n\nCamera: {camera}\nDate: {earth_date}\nSol: {sol}\nPhotos: {len(photos)}"
+
+
+def run(stop_event: Event, api: Any) -> None:
+    cfg = api.get_app_config()
+    refresh = float(cfg.get("refresh_seconds", 21600))
+    timeout = float(cfg.get("request_timeout_seconds", 6))
+    api_key = cfg.get("api_key") or api.get_secret("BOSS_APP_NASA_API_KEY")
+    title = "Space"
+    last_fetch = 0.0
+
+    def _show() -> None:
+        if not api_key:
+            api.screen.clear()
+            api.screen.display_text(f"{title}\n\n(no NASA API key set)", align="left")
+            return
+        try:
+            text = random.choice([_fetch_apod, _fetch_mars])(api_key, timeout)
+            api.screen.clear()
+            api.screen.display_text(text, align="left")
+        except Exception as exc:
+            api.screen.clear()
+            api.screen.display_text(f"{title}\n\nErr: {exc}", align="left")
+
+    def on_button(event: Any) -> None:
+        nonlocal last_fetch
+        if event.payload.get("button") == "green":
+            last_fetch = time.time()
+            _show()
+
+    api.hardware.set_led("green", True)
+    sub_id = api.event_bus.subscribe("input.button.pressed", on_button)
+    try:
+        _show()
+        last_fetch = time.time()
+        while not stop_event.is_set():
+            if time.time() - last_fetch >= refresh:
+                last_fetch = time.time()
+                _show()
+            stop_event.wait(0.5)
+    finally:
+        api.event_bus.unsubscribe(sub_id)
+        api.hardware.set_led("green", False)

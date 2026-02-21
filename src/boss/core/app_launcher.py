@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging as _logging
 
+from boss.config.secrets_manager import SecretsManager
 from boss.core import events
 from boss.core.app_api import AppAPI
 from boss.core.app_manager import AppManager
@@ -44,6 +45,7 @@ class AppLauncher:
         display: DisplayInterface,
         screen: ScreenInterface,
         config: BossConfig,
+        secrets: "SecretsManager | None" = None,
     ) -> None:
         self._bus = event_bus
         self._app_manager = app_manager
@@ -53,6 +55,7 @@ class AppLauncher:
         self._display = display
         self._screen = screen
         self._config = config
+        self._secrets = secrets
 
         # Subscribe to Go-button and app-finished events.
         self._bus.subscribe(events.GO_BUTTON_PRESSED, self._on_go_pressed)
@@ -91,6 +94,9 @@ class AppLauncher:
         # Transition feedback
         self._transition_feedback(app_name, switch_value)
 
+        # Build app summary list for list_all_apps
+        app_summaries = self._build_app_summaries()
+
         # Create scoped API and launch
         api = AppAPI(
             app_name=app_name,
@@ -100,6 +106,8 @@ class AppLauncher:
             screen=self._screen,
             leds=self._leds,
             config=self._config,
+            secrets=self._secrets,
+            app_summaries=app_summaries,
         )
 
         self._runner.run_app(app_name, app_dir, manifest, api)
@@ -129,3 +137,20 @@ class AppLauncher:
             self._display.show_number(self._switches.get_value())
         except Exception:
             _log.debug("Could not restore display after app cleanup")
+
+    def _build_app_summaries(self) -> list[dict]:
+        """Return sorted list of {switch, name, description} for all mapped apps."""
+        result: list[dict] = []
+        all_manifests = self._app_manager.get_all_manifests()
+        for sw_val, app_name in sorted(
+            (
+                (sw, name)
+                for sw, name in self._app_manager._switch_map.items()
+            )
+        ):
+            m = all_manifests.get(app_name)
+            if m:
+                result.append(
+                    {"switch": sw_val, "name": m.name, "description": m.description}
+                )
+        return result

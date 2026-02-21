@@ -1,0 +1,12 @@
+{
+    "name": "internet_speed_check",
+    "description": "Placeholder internet speed test (simulated values).",
+    "version": "0.1.0",
+    "author": "BOSS Team",
+    "entry_point": "main.py",
+    "timeout_seconds": 90,
+    "requires_network": true,
+    "tags": ["utility", "network"],
+    "timeout_behavior": "return",
+    "config": { "refresh_seconds": 1800 }
+}

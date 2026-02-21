@@ -1,0 +1,11 @@
+{
+    "name": "admin_shutdown",
+    "description": "Provides UI for shutting down, rebooting, or exiting BOSS.",
+    "version": "1.0.0",
+    "author": "B.O.S.S. Team",
+    "entry_point": "main.py",
+    "timeout_seconds": 900,
+    "timeout_behavior": "return",
+    "tags": ["admin", "system"],
+    "config": {}
+}

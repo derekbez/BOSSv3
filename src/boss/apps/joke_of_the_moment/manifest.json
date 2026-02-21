@@ -1,0 +1,18 @@
+{
+    "name": "joke_of_the_moment",
+    "description": "Random joke (JokeAPI v2) — two-part reveals on green press.",
+    "version": "1.0.0",
+    "author": "BOSS Team",
+    "entry_point": "main.py",
+    "timeout_seconds": 120,
+    "requires_network": true,
+    "tags": ["novelty", "network"],
+    "timeout_behavior": "return",
+    "config": {
+        "category": "Any",
+        "type": "single,twopart",
+        "blacklistFlags": ["nsfw", "religious", "political", "racist", "sexist"],
+        "request_timeout_seconds": 6,
+        "refresh_seconds": 600
+    }
+}

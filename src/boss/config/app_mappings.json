@@ -21,21 +21,19 @@
     "25": "name_that_animal",
     "26": "color_of_the_day",
     "27": "random_local_place_name",
-	
-	"28": "moon_phase",
-	"29": "space_update",
-	"30": "constellation_of_the_night",
+
+    "28": "moon_phase",
+    "29": "space_update",
+    "30": "constellation_of_the_night",
     "31": "local_tide_times",
 
-	"32": "joke_of_the_moment",
+    "32": "joke_of_the_moment",
 
-	"74": "flights_leaving_heathrow",
+    "74": "flights_leaving_heathrow",
     "75": "flight_status_favorite_airline",
-	
+
     "231": "internet_speed_check",
-	"244": "admin_startup",
-    "252": "admin_wifi_configuration",
-    "254": "admin_boss_admin",
+    "244": "admin_startup",
     "255": "admin_shutdown"
   },
   "parameters": {}
