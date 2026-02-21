@@ -1,11 +1,11 @@
 #!/bin/bash
 # Deploy BOSS to Raspberry Pi
 # Usage: ./deploy/deploy.sh [hostname]
-#   e.g. ./deploy/deploy.sh boss.local
+#   e.g. ./deploy/deploy.sh boss3.local
 
 set -euo pipefail
 
-PI_HOST="${1:-boss.local}"
+PI_HOST="${1:-boss3.local}"
 PI_USER="pi"
 REMOTE_DIR="/opt/boss"
 

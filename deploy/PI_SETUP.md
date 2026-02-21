@@ -7,7 +7,7 @@ Step-by-step instructions for getting a Raspberry Pi ready to run BOSS.
 ## 1. Flash the SD Card
 
 ### What you need
-- Raspberry Pi 4 or 5
+- Raspberry Pi 3B+ (or Pi 4 / Pi 5)
 - microSD card (16 GB minimum, 32 GB recommended)
 - A PC with [Raspberry Pi Imager](https://www.raspberrypi.com/software/) installed
 - An HDMI display (1024×600 or similar) connected to the Pi
@@ -16,7 +16,7 @@ Step-by-step instructions for getting a Raspberry Pi ready to run BOSS.
 ### Flash with Raspberry Pi Imager
 
 1. Open **Raspberry Pi Imager** on your PC.
-2. Click **Choose Device** → select your Pi model (Pi 4 / Pi 5).
+2. Click **Choose Device** → select your Pi model (Pi 3 / Pi 4 / Pi 5).
 3. Click **Choose OS** → **Raspberry Pi OS (other)** → **Raspberry Pi OS (64-bit) with desktop**.
    - This gives you the latest Debian Trixie-based image with the desktop environment.
    - Do **not** choose "Lite" — BOSS needs a desktop for the kiosk Chromium window.
@@ -26,7 +26,7 @@ Step-by-step instructions for getting a Raspberry Pi ready to run BOSS.
 ### OS Customisation Settings
 
 In the **General** tab:
-- **Set hostname**: `boss`
+- **Set hostname**: `boss3`
 - **Set username and password**: username `pi`, pick a strong password
 - **Configure wireless LAN**: enter your Wi-Fi SSID and password (skip if using Ethernet)
 - **Set locale settings**: your timezone and keyboard layout
@@ -51,10 +51,10 @@ Click **Save**, then **Yes** to apply and write the image.
 From your development PC:
 
 ```bash
-ssh pi@boss.local
+ssh pi@boss3.local
 ```
 
-If `boss.local` doesn't resolve, find the Pi's IP address from your router's DHCP table and use:
+If `boss3.local` doesn't resolve, find the Pi's IP address from your router's DHCP table and use:
 
 ```bash
 ssh pi@<IP_ADDRESS>
@@ -67,7 +67,7 @@ Accept the host key fingerprint when prompted. Enter the password you set in Ima
 From your PC:
 
 ```bash
-ssh-copy-id pi@boss.local
+ssh-copy-id pi@boss3.local
 ```
 
 This lets you connect without typing a password every time.
@@ -141,6 +141,8 @@ pip install -e ".[pi]"
 ```
 
 The `[pi]` extra installs Raspberry Pi hardware libraries (`gpiozero`, `lgpio`, `python-tm1637`).
+
+> **Python version:** The Pi ships with Python 3.13. The project requires Python 3.11+, so this works out of the box — no need to install a different Python.
 
 ### Verify the install
 
@@ -323,7 +325,7 @@ From your **development PC** (Windows/Mac), push code updates to the Pi:
 ### Option A: Git pull on the Pi
 
 ```bash
-ssh pi@boss.local
+ssh pi@boss3.local
 cd /opt/boss
 git pull
 source .venv/bin/activate
@@ -336,14 +338,14 @@ sudo systemctl restart boss boss-kiosk
 From your dev machine (requires `rsync` — available in WSL or Git Bash on Windows):
 
 ```bash
-./deploy/deploy.sh boss.local
+./deploy/deploy.sh boss3.local
 ```
 
 The script syncs code and restarts services:
 
 ```bash
 #!/bin/bash
-PI_HOST="${1:-boss.local}"
+PI_HOST="${1:-boss3.local}"
 rsync -avz --exclude '.venv' --exclude '__pycache__' --exclude '.git' \
   --exclude 'secrets/secrets.env' --exclude 'logs/' \
   . pi@${PI_HOST}:/opt/boss/
@@ -370,7 +372,7 @@ sudo systemctl restart boss-kiosk
 
 ### Can't find the Pi on the network
 - Check the Pi is powered on and connected (Ethernet LED / Wi-Fi)
-- Try `ping boss.local` — if it fails, check your router for the Pi's IP
+- Try `ping boss3.local` — if it fails, check your router for the Pi's IP
 - On Windows, mDNS (`.local`) requires Bonjour. Try the raw IP instead.
 
 ### GPIO permission errors
@@ -405,7 +407,7 @@ sudo systemctl restart boss
 
 | Task | Command |
 |------|---------|
-| SSH into Pi | `ssh pi@boss.local` |
+| SSH into Pi | `ssh pi@boss3.local` |
 | Start BOSS | `sudo systemctl start boss boss-kiosk` |
 | Stop BOSS | `sudo systemctl stop boss-kiosk boss` |
 | Restart BOSS | `sudo systemctl restart boss boss-kiosk` |
