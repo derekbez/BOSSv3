@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging as _logging
+import subprocess
 import sys
 from pathlib import Path
 
@@ -56,6 +57,20 @@ class SystemManager:
         self._launcher: AppLauncher | None = None
         self._bridge: HardwareEventBridge | None = None
         self._app_manager: AppManager | None = None
+
+    # ------------------------------------------------------------------
+    # Public properties
+    # ------------------------------------------------------------------
+
+    @property
+    def app_manager(self) -> AppManager | None:
+        """The app manager (available after ``start()``)."""
+        return self._app_manager
+
+    @property
+    def app_runner(self) -> AppRunner | None:
+        """The app runner (available after ``start()``)."""
+        return self._runner
 
     # ------------------------------------------------------------------
     # Startup
@@ -141,6 +156,14 @@ class SystemManager:
             _log.info("Exiting process")
             sys.exit(0)
         elif action == "reboot":
-            _log.info("Reboot requested — would call 'sudo reboot' on Pi")
+            if self._config.system.dev_mode:
+                _log.warning("Reboot requested but dev_mode=True — ignoring")
+            else:
+                _log.info("Rebooting Pi …")
+                subprocess.Popen(["sudo", "reboot"])  # noqa: S603, S607
         elif action == "shutdown":
-            _log.info("Shutdown requested — would call 'sudo shutdown -h now' on Pi")
+            if self._config.system.dev_mode:
+                _log.warning("Shutdown requested but dev_mode=True — ignoring")
+            else:
+                _log.info("Shutting down Pi …")
+                subprocess.Popen(["sudo", "shutdown", "-h", "now"])  # noqa: S603, S607

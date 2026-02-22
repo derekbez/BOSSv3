@@ -1,0 +1,14 @@
+{
+    "name": "admin_boss_admin",
+    "description": "System administration — status, logs, apps, and updates.",
+    "version": "3.0.0",
+    "author": "Derek Bez",
+    "entry_point": "main.py",
+    "timeout_seconds": 300,
+    "timeout_behavior": "return",
+    "requires_network": false,
+    "requires_audio": false,
+    "tags": ["admin", "system"],
+    "required_env": [],
+    "config": {}
+}

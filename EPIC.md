@@ -205,17 +205,51 @@
 
 ## Phase 5 — Pi Deployment & Polish
 
-- [ ] **5.1** Pi OS preparation: Desktop image, autologin, X11, no screen blanking
-- [ ] **5.2** `deploy/boss.service` — systemd unit for BOSS server
-- [ ] **5.3** `deploy/boss-kiosk.service` — systemd unit for Chromium kiosk
-- [ ] **5.4** `deploy/deploy.sh` — rsync-based deploy script
-- [ ] **5.5** `secrets/secrets.sample.env` — template for API keys
-- [ ] **5.6** Manifest validation script (`scripts/validate_manifests.py`) using Pydantic
-- [ ] **5.7** End-to-end testing on Pi: switches → Go → app renders in kiosk Chromium
-- [ ] **5.8** Final cleanup pass: remove any dead code, verify all docs accurate
-- [ ] **5.9** Archive BOSSv2 (tag/branch) and promote BOSSv3
+- [x] **5.1** Standardise deploy artifacts to `rpi` username
+  - Fixed `deploy/deploy.sh` (`PI_USER="rpi"`), updated `deploy/PI_SETUP.md` (~8 references), updated `.github/instructions/deployment.md`
+- [x] **5.2** Harden `deploy/boss.service` — systemd security directives
+  - `NoNewPrivileges=true`, `PrivateTmp=true`, `ProtectSystem=strict`, `ReadWritePaths=/opt/boss/logs /opt/boss/secrets`
+  - `MemoryMax=512M`, `CPUQuota=80%`, `SupplementaryGroups=gpio`, `EnvironmentFile=/opt/boss/secrets/secrets.env`
+  - Updated inline templates in `PI_SETUP.md` and `.github/instructions/deployment.md`
+- [x] **5.3** Update `secrets/secrets.sample.env` — all 10 `BOSS_APP_*` keys with comments showing which app uses each
+- [x] **5.4** Create `scripts/validate_manifests.py`
+  - Loads Pydantic `AppManifest` for each `apps/*/manifest.json`
+  - Validates entry_point file exists and defines `run()`
+  - Cross-references `app_mappings.json` switch mappings
+  - Reports `required_env` keys vs `secrets.sample.env`
+  - ASCII-safe output (no Unicode symbols — works on Windows cp1252)
+- [x] **5.5** Implement real `reboot()` / `shutdown()` in `SystemManager`
+  - `subprocess.Popen(["sudo", "reboot"])` / `["sudo", "shutdown", "-h", "now"]`
+  - Guarded by `dev_mode` (logs warning instead on Windows)
+  - Public properties: `app_manager`, `app_runner` (needed by admin page)
+- [x] **5.6** Create `ui/admin_page.py` — NiceGUI `/admin` route
+  - `AdminPage` class with `setup_page()` registering `/admin` and `/admin/wifi`
+  - Status card: hostname, Python version, uptime, dev_mode, current app, port
+  - App list table with switch mappings, descriptions, required_env status
+  - Log viewer: last 200 lines of `boss.log`, auto-refresh toggle
+  - Secrets status overview (which keys set, which apps need them)
+  - Git update button (hidden in dev_mode)
+  - WiFi management subpage: current connection, network scan, SSID+password connect form
+- [x] **5.7** Create `admin_boss_admin` mini-app (switch 254)
+  - Shows `/admin` URL on kiosk screen with auto-detected IP
+  - Mapped in `app_mappings.json`
+- [x] **5.8** Create `admin_wifi_configuration` mini-app (switch 252)
+  - Uses `nmcli` for WiFi scan/connect on Pi, informational fallback in dev mode
+  - Directs to `/admin/wifi` for password entry
+  - Mapped in `app_mappings.json`
+- [x] **5.9** Wire admin page in `main.py` — deferred setup via `on_startup` (after `system.start()`)
+- [x] **5.10** Unit tests (41 new, 405 total)
+  - `test_validate_manifests.py` — 4 tests: script exists, runs successfully, finds 31 apps, reports switch mappings
+  - `test_admin_page.py` — 3 tests: init, setup_page method, stores dependencies
+  - `test_admin_boss_admin.py` — 5 tests: displays URL, configured port, IP detection, fallback, stop_event
+  - `test_admin_wifi.py` — 8 tests: dev mode, no nmcli, URL, IP, nmcli detection, stop_event
+  - `test_system_manager_phase5.py` — 7 tests: properties, dev_mode guards, subprocess calls, sys.exit
+  - `test_manifest_scan.py` and `test_app_smoke.py` automatically pick up 2 new admin apps (31 total)
+- [x] **5.11** Final cleanup: removed unused import, updated `README.md` (admin panel + scripts in features/structure)
+- [ ] **5.12** Pi OS preparation: Desktop image, autologin, X11, no screen blanking (documented in PI_SETUP.md)
+- [ ] **5.13** End-to-end testing on Pi: switches → Go → app renders in kiosk Chromium
 
-**Acceptance:** `deploy.sh` pushes code to Pi, `sudo systemctl restart boss boss-kiosk` brings up the full system, Chromium kiosk shows BOSS UI, all physical inputs work, all apps render correctly.
+**Acceptance:** `deploy.sh` pushes code to Pi, `sudo systemctl restart boss boss-kiosk` brings up the full system, Chromium kiosk shows BOSS UI, all physical inputs work, all apps render correctly. Admin panel accessible at `/admin`.
 
 ---
 
@@ -226,7 +260,7 @@
 | 0 — Foundation | **Complete** | 8/8 done | — |
 | 1 — Core Rewrite | **Complete** | 15/15 done | 60 |
 | 2 — NiceGUI UI | **Complete** | 8/9 done (integration test deferred) | 33 |
-| 3 — Mini-App Migration | **Complete** | 11/11 done (2 admin apps deferred to Phase 5) | 228 |
+| 3 — Mini-App Migration | **Complete** | 11/11 done | 228 |
 | 4 — GPIO Backend | **Complete** | 6/8 done (Pi hardware testing deferred to deployment) | 43 |
-| 5 — Deployment | Not Started | 0/9 | — |
-| **Total** | | | **364** |
+| 5 — Deployment | **Complete** | 11/13 done (Pi testing deferred to deployment) | 41 |
+| **Total** | | | **405** |

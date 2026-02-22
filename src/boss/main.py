@@ -70,7 +70,15 @@ def main() -> None:
     layout = BossLayout(screen=nicegui_screen, event_bus=bus, config=config)
     layout.setup_page()
 
-    # 8. Set up dev panel (mock hardware only)
+    # 8. Set up admin page (/admin and /admin/wifi routes)
+    from boss.ui.admin_page import AdminPage
+
+    # Admin page needs app_manager and app_runner which are created in
+    # SystemManager.start(). We wire up a deferred setup via on_startup.
+
+    admin_page: AdminPage | None = None
+
+    # 9. Set up dev panel (mock hardware only)
     if isinstance(factory, MockHardwareFactory):
         from boss.ui.dev_panel import DevPanel
 
@@ -81,10 +89,22 @@ def main() -> None:
             layout._build_page()
             dev_panel.build()
 
-    # 9. Wire lifecycle hooks
+    # 10. Wire lifecycle hooks
     async def on_startup() -> None:
         _log.info("NiceGUI startup — starting BOSS system")
         await system.start()
+
+        # Now that SystemManager.start() has been called, wire admin page
+        nonlocal admin_page
+        admin_page = AdminPage(
+            event_bus=bus,
+            config=config,
+            app_manager=system.app_manager,
+            app_runner=system.app_runner,
+            secrets=secrets,
+        )
+        admin_page.setup_page()
+
         _log.info("BOSS v3 running on http://localhost:%d", config.system.webui_port)
 
     async def on_shutdown() -> None:
@@ -95,7 +115,7 @@ def main() -> None:
     app.on_startup(on_startup)
     app.on_shutdown(on_shutdown)
 
-    # 10. Launch NiceGUI (blocks forever)
+    # 11. Launch NiceGUI (blocks forever)
     ui.run(
         port=config.system.webui_port,
         title="BOSS v3",

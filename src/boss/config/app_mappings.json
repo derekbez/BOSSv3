@@ -34,6 +34,8 @@
 
     "231": "internet_speed_check",
     "244": "admin_startup",
+    "252": "admin_wifi_configuration",
+    "254": "admin_boss_admin",
     "255": "admin_shutdown"
   },
   "parameters": {}

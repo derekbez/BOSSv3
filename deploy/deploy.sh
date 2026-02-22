@@ -6,7 +6,7 @@
 set -euo pipefail
 
 PI_HOST="${1:-boss3.local}"
-PI_USER="pi"
+PI_USER="rpi"
 REMOTE_DIR="/opt/boss"
 
 echo "==> Deploying BOSS to ${PI_USER}@${PI_HOST}:${REMOTE_DIR}"

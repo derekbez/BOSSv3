@@ -35,11 +35,20 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=pi
+User=rpi
 WorkingDirectory=/opt/boss
 ExecStart=/opt/boss/.venv/bin/python -m boss.main
 Restart=on-failure
 RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/opt/boss/secrets/secrets.env
+SupplementaryGroups=gpio
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/boss/logs /opt/boss/secrets
+MemoryMax=512M
+CPUQuota=80%
 
 [Install]
 WantedBy=graphical.target
@@ -57,11 +66,12 @@ Requires=boss.service
 
 [Service]
 Type=simple
-User=pi
+User=rpi
 Environment=DISPLAY=:0
-ExecStartPre=/bin/sleep 3
-ExecStart=/usr/bin/chromium-browser --kiosk --noerrdialogs --disable-infobars --incognito http://localhost:8080
+ExecStartPre=/bin/sleep 5
+ExecStart=/usr/bin/chromium --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --incognito http://localhost:8080
 Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=graphical.target
@@ -75,8 +85,8 @@ WantedBy=graphical.target
 #!/bin/bash
 PI_HOST="${1:-boss}"
 rsync -avz --exclude '.venv' --exclude '__pycache__' --exclude '.git' \
-  . pi@${PI_HOST}:/opt/boss/
-ssh pi@${PI_HOST} 'cd /opt/boss && .venv/bin/pip install -e ".[pi]" && sudo systemctl restart boss boss-kiosk'
+  . rpi@${PI_HOST}:/opt/boss/
+ssh rpi@${PI_HOST} 'cd /opt/boss && .venv/bin/pip install -e ".[pi]" && sudo systemctl restart boss boss-kiosk'
 ```
 
 ## Secrets
@@ -89,7 +99,7 @@ Never rsync secrets — manage them manually on the Pi.
 If a deploy breaks:
 
 ```bash
-ssh pi@boss 'cd /opt/boss && git checkout HEAD~1 && sudo systemctl restart boss boss-kiosk'
+ssh rpi@boss 'cd /opt/boss && git checkout HEAD~1 && sudo systemctl restart boss boss-kiosk'
 ```
 
 Or keep a `backup/` directory and swap.

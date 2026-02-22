@@ -27,7 +27,7 @@ Step-by-step instructions for getting a Raspberry Pi ready to run BOSS.
 
 In the **General** tab:
 - **Set hostname**: `boss3`
-- **Set username and password**: username `pi`, pick a strong password
+- **Set username and password**: username `rpi`, pick a strong password
 - **Configure wireless LAN**: enter your Wi-Fi SSID and password (skip if using Ethernet)
 - **Set locale settings**: your timezone and keyboard layout
 
@@ -51,13 +51,13 @@ Click **Save**, then **Yes** to apply and write the image.
 From your development PC:
 
 ```bash
-ssh pi@boss3.local
+ssh rpi@boss3.local
 ```
 
 If `boss3.local` doesn't resolve, find the Pi's IP address from your router's DHCP table and use:
 
 ```bash
-ssh pi@<IP_ADDRESS>
+ssh rpi@<IP_ADDRESS>
 ```
 
 Accept the host key fingerprint when prompted. Enter the password you set in Imager.
@@ -67,7 +67,7 @@ Accept the host key fingerprint when prompted. Enter the password you set in Ima
 From your PC:
 
 ```bash
-ssh-copy-id pi@boss3.local
+ssh-copy-id rpi@boss3.local
 ```
 
 This lets you connect without typing a password every time.
@@ -86,7 +86,7 @@ Apply these settings:
 
 | Menu Path | Setting |
 |-----------|---------|
-| **System Options → Boot / Auto Login** | Desktop Autologin (boot to desktop, logged in as `pi`) |
+| **System Options → Boot / Auto Login** | Desktop Autologin (boot to desktop, logged in as `rpi`) |
 | **Display Options → Screen Blanking** | **Disable** (prevents the screen going black after idle) |
 | **Advanced Options → Wayland** | Switch to **X11** if you plan to use `unclutter` to hide the mouse cursor |
 | **Interface Options → SPI** | **Enable** (needed for some hardware) |
@@ -126,7 +126,7 @@ sudo apt install -y git python3-venv python3-dev chromium unclutter
 
 ```bash
 sudo mkdir -p /opt/boss
-sudo chown pi:pi /opt/boss
+sudo chown rpi:rpi /opt/boss
 git clone https://github.com/derekbez/BOSSv3.git /opt/boss
 ```
 
@@ -165,11 +165,15 @@ nano /opt/boss/secrets/secrets.env
 Fill in the keys your apps need:
 
 ```dotenv
-OPENWEATHER_API_KEY=your_key_here
-NEWS_API_KEY=your_key_here
-AVIATIONSTACK_API_KEY=your_key_here
-TIDE_API_KEY=your_key_here
-PLACES_API_KEY=your_key_here
+BOSS_APP_AVIATIONSTACK_API_KEY=your_key_here
+BOSS_APP_EBIRD_API_KEY=your_key_here
+BOSS_APP_IPGEO_API_KEY=your_key_here
+BOSS_APP_LASTFM_API_KEY=your_key_here
+BOSS_APP_NASA_API_KEY=your_key_here
+BOSS_APP_NEWSDATA_API_KEY=your_key_here
+BOSS_APP_SERPAPI_API_KEY=your_key_here
+BOSS_APP_WORDNIK_API_KEY=your_key_here
+BOSS_APP_WORLDTIDES_API_KEY=your_key_here
 ```
 
 Save and exit (`Ctrl+O`, `Enter`, `Ctrl+X`).
@@ -224,12 +228,20 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=pi
+User=rpi
 WorkingDirectory=/opt/boss
 ExecStart=/opt/boss/.venv/bin/python -m boss.main
 Restart=on-failure
 RestartSec=5
 Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/opt/boss/secrets/secrets.env
+SupplementaryGroups=gpio
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/boss/logs /opt/boss/secrets
+MemoryMax=512M
+CPUQuota=80%
 
 [Install]
 WantedBy=graphical.target
@@ -252,7 +264,7 @@ Requires=boss.service
 
 [Service]
 Type=simple
-User=pi
+User=rpi
 Environment=DISPLAY=:0
 ExecStartPre=/bin/sleep 5
 ExecStart=/usr/bin/chromium --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --incognito http://localhost:8080
@@ -326,7 +338,7 @@ From your **development PC** (Windows/Mac), push code updates to the Pi:
 ### Option A: Git pull on the Pi
 
 ```bash
-ssh pi@boss3.local
+ssh rpi@boss3.local
 cd /opt/boss
 git pull
 source .venv/bin/activate
@@ -349,8 +361,8 @@ The script syncs code and restarts services:
 PI_HOST="${1:-boss3.local}"
 rsync -avz --exclude '.venv' --exclude '__pycache__' --exclude '.git' \
   --exclude 'secrets/secrets.env' --exclude 'logs/' \
-  . pi@${PI_HOST}:/opt/boss/
-ssh pi@${PI_HOST} 'cd /opt/boss && .venv/bin/pip install -e ".[pi]" && sudo systemctl restart boss boss-kiosk'
+  . rpi@${PI_HOST}:/opt/boss/
+ssh rpi@${PI_HOST} 'cd /opt/boss && .venv/bin/pip install -e ".[pi]" && sudo systemctl restart boss boss-kiosk'
 ```
 
 > **Important:** Secrets are excluded from rsync. Manage them manually on the Pi.
@@ -378,8 +390,8 @@ sudo systemctl restart boss-kiosk
 
 ### GPIO permission errors
 ```bash
-# Add pi to the gpio group (usually done by default)
-sudo usermod -aG gpio pi
+# Add rpi to the gpio group (usually done by default)
+sudo usermod -aG gpio rpi
 # Reboot for group changes to take effect
 sudo reboot
 ```
@@ -408,7 +420,7 @@ sudo systemctl restart boss
 
 | Task | Command |
 |------|---------|
-| SSH into Pi | `ssh pi@boss3.local` |
+| SSH into Pi | `ssh rpi@boss3.local` |
 | Start BOSS | `sudo systemctl start boss boss-kiosk` |
 | Stop BOSS | `sudo systemctl stop boss-kiosk boss` |
 | Restart BOSS | `sudo systemctl restart boss boss-kiosk` |
