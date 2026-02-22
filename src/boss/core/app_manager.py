@@ -106,15 +106,31 @@ class AppManager:
         if not self._mappings_path.is_file():
             _log.warning("Mappings file not found: %s", self._mappings_path)
             return {}
-        raw: dict[str, str] = json.loads(
+        parsed: dict[str, Any] = json.loads(
             self._mappings_path.read_text(encoding="utf-8")
         )
+
+        # Support both shapes:
+        # 1) flat map: {"1": "hello_world", ...}
+        # 2) wrapped map: {"app_mappings": {"1": "hello_world", ...}, "parameters": {...}}
+        raw_mappings: dict[str, Any]
+        if "app_mappings" in parsed and isinstance(parsed["app_mappings"], dict):
+            raw_mappings = parsed["app_mappings"]
+        else:
+            raw_mappings = parsed
+
         switch_map: dict[int, str] = {}
-        for key, app_name in raw.items():
+        for key, app_name in raw_mappings.items():
             try:
                 switch_val = int(key)
             except ValueError:
                 _log.warning("Non-integer switch key %r in mappings — skipping", key)
+                continue
+            if not isinstance(app_name, str):
+                _log.warning(
+                    "Non-string app name for switch key %r in mappings — skipping",
+                    key,
+                )
                 continue
             if app_name not in self._manifests:
                 _log.warning(

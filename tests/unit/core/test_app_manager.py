@@ -111,3 +111,31 @@ class TestAppManager:
 
         assert mgr.get_app_dir("myapp") == apps_dir / "myapp"
         assert mgr.get_app_dir("nonexistent") is None
+
+    def test_wrapped_app_mappings_shape(self, apps_dir, mappings_path, secrets):
+        create_app(apps_dir, "hello")
+        create_app(apps_dir, "jokes")
+        mappings_path.write_text(
+            json.dumps(
+                {
+                    "app_mappings": {"1": "hello", "42": "jokes"},
+                    "parameters": {},
+                }
+            )
+        )
+
+        mgr = AppManager(apps_dir, mappings_path, secrets)
+        mgr.scan_apps()
+
+        assert mgr.get_app_for_switch(1) == "hello"
+        assert mgr.get_app_for_switch(42) == "jokes"
+
+    def test_non_string_mapping_value_skipped(self, apps_dir, mappings_path, secrets):
+        create_app(apps_dir, "hello")
+        mappings_path.write_text(json.dumps({"1": 123, "2": "hello"}))
+
+        mgr = AppManager(apps_dir, mappings_path, secrets)
+        mgr.scan_apps()
+
+        assert mgr.get_app_for_switch(1) is None
+        assert mgr.get_app_for_switch(2) == "hello"
