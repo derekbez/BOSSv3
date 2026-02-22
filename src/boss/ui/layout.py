@@ -61,6 +61,10 @@ class BossLayout:
         """Construct the full page layout."""
         ui.dark_mode().enable()
 
+        screen_width = self._config.hardware.screen_width
+        screen_height = self._config.hardware.screen_height
+        screen_ratio = screen_width / screen_height
+
         # Subscribe to status-relevant events
         self._bus.subscribe(events.SWITCH_CHANGED, self._on_switch_changed)
         self._bus.subscribe(events.APP_STARTED, self._on_app_started)
@@ -77,15 +81,15 @@ class BossLayout:
             "min-height: 100vh; padding: 8px; gap: 8px;"
         ):
             # --- Status bar ---
-            self._build_status_bar()
+            self._build_status_bar(screen_width)
 
             # --- App screen container ---
-            self._build_screen_container()
+            self._build_screen_container(screen_width, screen_height, screen_ratio)
 
-    def _build_status_bar(self) -> None:
+    def _build_status_bar(self, screen_width: int) -> None:
         """Render the persistent status bar at the top."""
         with ui.row().classes("w-full items-center justify-between").style(
-            "max-width: 840px; background: #333333; border-radius: 8px; "
+            f"max-width: {screen_width}px; background: #333333; border-radius: 8px; "
             "padding: 8px 16px; color: #ffffff; font-family: 'Segoe UI', sans-serif;"
         ):
             with ui.row().classes("items-center gap-2"):
@@ -106,11 +110,19 @@ class BossLayout:
                     "font-size: 14px;"
                 )
 
-    def _build_screen_container(self) -> None:
+    def _build_screen_container(
+        self,
+        screen_width: int,
+        screen_height: int,
+        screen_ratio: float,
+    ) -> None:
         """Render the app display area and bind the screen."""
         with ui.column().classes("items-center").style(
-            "background: #000000; width: 100%; max-width: 840px; "
-            "aspect-ratio: 5/3; border-radius: 8px; overflow: hidden; "
+            "background: #000000; "
+            f"width: min(100%, calc((100vh - 92px) * {screen_ratio:.6f})); "
+            f"max-width: {screen_width}px; "
+            f"aspect-ratio: {screen_width}/{screen_height}; "
+            "border-radius: 8px; overflow: hidden; "
             "border: 1px solid #555555;"
         ) as container:
             pass  # Content rendered dynamically by NiceGUIScreen
