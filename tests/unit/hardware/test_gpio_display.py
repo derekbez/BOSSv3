@@ -72,6 +72,23 @@ class TestGPIODisplay:
         mock_tm.brightness.assert_called_with(5)
 
     @patch("boss.hardware.gpio.gpio_hardware.TM1637")
+    def test_set_brightness_property(self, MockTM):
+        # simulate package where brightness is an int attribute
+        from boss.hardware.gpio.gpio_hardware import GPIODisplay
+
+        class Fake:
+            def __init__(self):
+                self.brightness = 0
+        mock_tm = Fake()
+        MockTM.return_value = mock_tm
+
+        disp = GPIODisplay(_make_config())
+        # initialisation should set attribute to 7
+        assert mock_tm.brightness == 7
+        disp.set_brightness(3)
+        assert mock_tm.brightness == 3
+
+    @patch("boss.hardware.gpio.gpio_hardware.TM1637")
     def test_set_brightness_clamped(self, MockTM):
         from boss.hardware.gpio.gpio_hardware import GPIODisplay
 

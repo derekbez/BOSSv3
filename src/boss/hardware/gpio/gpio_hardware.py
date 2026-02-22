@@ -272,7 +272,18 @@ class GPIODisplay(DisplayInterface):
         clk = config.display_clk_pin
         dio = config.display_dio_pin
         self._tm = TM1637(clk=clk, dio=dio)
-        self._tm.brightness(7)  # default max
+        # some versions of python-tm1637 expose brightness as a method
+        # (callable) while others make it an integer property.  handle
+        # either case so the display always comes up at max brightness.
+        try:
+            if hasattr(self._tm, "brightness"):
+                if callable(self._tm.brightness):
+                    self._tm.brightness(7)
+                else:
+                    # property-style
+                    setattr(self._tm, "brightness", 7)
+        except Exception:
+            _log.exception("Error setting TM1637 initial brightness")
         self.clear()
         _log.info("GPIODisplay initialised (CLK=%d, DIO=%d)", clk, dio)
 
@@ -305,7 +316,10 @@ class GPIODisplay(DisplayInterface):
             return
         clamped = max(0, min(7, level))
         try:
-            self._tm.brightness(clamped)
+            if callable(self._tm.brightness):
+                self._tm.brightness(clamped)
+            else:
+                setattr(self._tm, "brightness", clamped)
         except Exception:
             _log.exception("Error setting TM1637 brightness")
 

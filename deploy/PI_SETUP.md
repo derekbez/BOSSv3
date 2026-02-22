@@ -89,7 +89,7 @@ Apply these settings:
 | **System Options → Boot / Auto Login** | Desktop Autologin (boot to desktop, logged in as `rpi`) |
 | **Display Options → Screen Blanking** | **Disable** (prevents the screen going black after idle) |
 | **Advanced Options → Wayland** | Switch to **X11** if you plan to use `unclutter` to hide the mouse cursor |
-| **Interface Options → SPI** | **Enable** (needed for some hardware) |
+| **Interface Options → SPI** | **Disable** (SPI uses GPIO8 which BOSS needs for its switch multiplexer; enabling SPI makes the pin "busy" and prevents the app from starting; only enable if you have other SPI devices and rewire the mux to different GPIOs) |
 | **Interface Options → I2C** | **Enable** (needed for TM1637 display) |
 
 Select **Finish** and reboot when prompted:
@@ -395,6 +395,31 @@ sudo usermod -aG gpio rpi
 # Reboot for group changes to take effect
 sudo reboot
 ```
+
+### “GPIO busy” error at startup
+If `journalctl -u boss` shows a traceback ending with `lgpio.error: 'GPIO busy'`,
+it means something else is holding the GPIO device (often a previous BOSS
+process that didn’t exit cleanly). systemd will repeatedly restart the service,
+so the kiosk browser just flashes “site can’t be reached”.
+
+Fix the problem by stopping the service and freeing the pins (or simply
+reboot the Pi):
+
+```bash
+sudo systemctl stop boss
+sudo pkill -f boss.main      # kill any stray Python instance using gpio
+# or, more brutally:
+sudo reboot
+```
+
+If the error persists after reboot, identify the culprit with:
+
+```bash
+sudo lsof /dev/gpiomem
+```
+
+then kill the offending process. Once the pins are free, `sudo
+systemctl start boss` should bring the UI back online.
 
 ### Display not detected / wrong resolution
 ```bash
