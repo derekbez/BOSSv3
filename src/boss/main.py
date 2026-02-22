@@ -68,7 +68,6 @@ def main() -> None:
     from boss.ui.layout import BossLayout
 
     layout = BossLayout(screen=nicegui_screen, event_bus=bus, config=config)
-    layout.setup_page()
 
     # 8. Set up admin page (/admin and /admin/wifi routes)
     from boss.ui.admin_page import AdminPage
@@ -78,7 +77,9 @@ def main() -> None:
 
     admin_page: AdminPage | None = None
 
-    # 9. Set up dev panel (mock hardware only)
+    # 9. Set up routes
+    # On mock hardware (Windows/Mac/dev), always include the on-screen
+    # hardware simulator panel so physical switches can be emulated.
     if isinstance(factory, MockHardwareFactory):
         from boss.ui.dev_panel import DevPanel
 
@@ -88,6 +89,8 @@ def main() -> None:
         def _index_with_dev():
             layout._build_page()
             dev_panel.build()
+    else:
+        layout.setup_page()
 
     # 10. Wire lifecycle hooks
     async def on_startup() -> None:
