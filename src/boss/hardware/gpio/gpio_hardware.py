@@ -293,10 +293,10 @@ class GPIODisplay(DisplayInterface):
         if self._tm is None:
             return
         try:
-            if hasattr(self._tm, "number"):
+            if hasattr(self._tm, "show"):
+                self._tm.show(f"{value % 10000:04d}")
+            elif hasattr(self._tm, "number"):
                 self._tm.number(value)
-            else:
-                self._tm.show(str(value).rjust(4))
         except Exception:
             _log.exception("Error showing number %d on TM1637", value)
 

@@ -27,25 +27,26 @@ class TestGPIODisplay:
         from boss.hardware.gpio.gpio_hardware import GPIODisplay
 
         mock_tm = MagicMock()
+        mock_tm.show = MagicMock()
         mock_tm.number = MagicMock()
         MockTM.return_value = mock_tm
 
         disp = GPIODisplay(_make_config())
         disp.show_number(42)
-        mock_tm.number.assert_called_with(42)
+        mock_tm.show.assert_called_with("0042")
 
     @patch("boss.hardware.gpio.gpio_hardware.TM1637")
     def test_show_number_fallback_to_show(self, MockTM):
         from boss.hardware.gpio.gpio_hardware import GPIODisplay
 
-        # Create a mock that has show & brightness but NOT number
+        # Create a mock that has number but NOT show
         mock_tm = MagicMock()
-        del mock_tm.number  # remove auto-generated 'number' attr
+        del mock_tm.show  # remove auto-generated 'show' attr
         MockTM.return_value = mock_tm
 
         disp = GPIODisplay(_make_config())
         disp.show_number(7)
-        mock_tm.show.assert_called_with("   7")  # rjust(4)
+        mock_tm.number.assert_called_with(7)
 
     @patch("boss.hardware.gpio.gpio_hardware.TM1637")
     def test_clear(self, MockTM):

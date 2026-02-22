@@ -69,7 +69,9 @@ class BossLayout:
         self._bus.subscribe(events.SYSTEM_STARTED, self._on_system_started)
 
         # Full-screen dark background
-        ui.query("body").style("background: #1a1a1a; margin: 0; padding: 0;")
+        ui.query("body").style(
+            "background: #1a1a1a; margin: 0; padding: 0; overflow: hidden;"
+        )
 
         with ui.column().classes("w-full items-center").style(
             "min-height: 100vh; padding: 8px; gap: 8px;"
@@ -108,7 +110,7 @@ class BossLayout:
         """Render the app display area and bind the screen."""
         with ui.column().classes("items-center").style(
             "background: #000000; width: 100%; max-width: 840px; "
-            "aspect-ratio: 5/3; border-radius: 8px; overflow: auto; "
+            "aspect-ratio: 5/3; border-radius: 8px; overflow: hidden; "
             "border: 1px solid #555555;"
         ) as container:
             pass  # Content rendered dynamically by NiceGUIScreen

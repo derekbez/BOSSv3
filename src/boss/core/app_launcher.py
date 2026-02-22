@@ -61,6 +61,7 @@ class AppLauncher:
         self._bus.subscribe(events.GO_BUTTON_PRESSED, self._on_go_pressed)
         self._bus.subscribe(events.APP_FINISHED, self._on_app_done)
         self._bus.subscribe(events.APP_ERROR, self._on_app_done)
+        self._bus.subscribe(events.SWITCH_CHANGED, self._on_switch_changed)
 
     # ------------------------------------------------------------------
     # Event handlers
@@ -117,6 +118,18 @@ class AppLauncher:
         app_name = event.payload.get("app_name", "?")
         _log.info("App %s finished — cleaning up", app_name)
         self._post_app_cleanup()
+
+    async def _on_switch_changed(self, event: Event) -> None:
+        """Reflect switch changes on display while idle."""
+        if self._runner.is_running:
+            return
+        new_value = event.payload.get("new_value")
+        if not isinstance(new_value, int):
+            return
+        try:
+            self._display.show_number(new_value)
+        except Exception:
+            _log.debug("Could not update display for switch change")
 
     # ------------------------------------------------------------------
     # Helpers
