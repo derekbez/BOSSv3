@@ -121,6 +121,25 @@ class AppAPI:
         """Return the full ``config`` dict from the app's manifest."""
         return dict(self._manifest.config)
 
+    def get_webui_port(self) -> int:
+        """Return the current web UI port from the system config.
+
+        This is primarily used by mini‑apps that need to construct URLs
+        pointing back to the running BOSS service.  It keeps apps from
+        reaching directly into ``BossConfig`` and makes the value easy to
+        mock in tests.
+        """
+        return self._config.system.webui_port
+
+    def is_dev_mode(self) -> bool:
+        """Return ``True`` if the system is running in developer mode.
+
+        Apps should use this instead of inspecting ``config`` directly
+        so the public API remains stable if the underlying config model
+        changes.
+        """
+        return self._config.system.dev_mode
+
     def get_config_value(self, key: str, default: Any = None) -> Any:
         """Return a single config value from the manifest, with a default."""
         return self._manifest.config.get(key, default)

@@ -77,10 +77,10 @@ def _scan_networks() -> list[dict[str, str]]:
 
 def run(stop_event: threading.Event, api: "AppAPI") -> None:
     """Display WiFi status and available networks on the kiosk screen."""
-    port = api.config.system.webui_port
+    port = api.get_webui_port()
     ip = _get_local_ip()
 
-    if api.config.system.dev_mode or not _has_nmcli():
+    if api.is_dev_mode() or not _has_nmcli():
         api.screen.display_html(
             f"""
             <div style="text-align: center; padding: 40px; color: #ffffff;">

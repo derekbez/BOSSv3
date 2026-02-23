@@ -16,8 +16,8 @@ class TestAdminWifiConfiguration:
     def test_run_dev_mode_shows_message(self) -> None:
         """In dev mode, should show a 'not available' message."""
         api = MagicMock()
-        api.config.system.dev_mode = True
-        api.config.system.webui_port = 8080
+        api.is_dev_mode.return_value = True
+        api.get_webui_port.return_value = 8080
         stop = threading.Event()
         stop.set()
 
@@ -32,8 +32,8 @@ class TestAdminWifiConfiguration:
     def test_run_no_nmcli_shows_message(self, mock_nmcli) -> None:
         """Without nmcli, should show a 'not available' message."""
         api = MagicMock()
-        api.config.system.dev_mode = False
-        api.config.system.webui_port = 8080
+        api.is_dev_mode.return_value = False
+        api.get_webui_port.return_value = 8080
         stop = threading.Event()
         stop.set()
 
@@ -46,8 +46,8 @@ class TestAdminWifiConfiguration:
     def test_run_includes_admin_wifi_url(self) -> None:
         """Should include /admin/wifi URL in the output."""
         api = MagicMock()
-        api.config.system.dev_mode = True
-        api.config.system.webui_port = 8080
+        api.is_dev_mode.return_value = True
+        api.get_webui_port.return_value = 8080
         stop = threading.Event()
         stop.set()
 
@@ -79,8 +79,8 @@ class TestAdminWifiConfiguration:
     def test_run_waits_for_stop_event(self) -> None:
         """The app should block on stop_event.wait()."""
         api = MagicMock()
-        api.config.system.dev_mode = True
-        api.config.system.webui_port = 8080
+        api.is_dev_mode.return_value = True
+        api.get_webui_port.return_value = 8080
         stop = threading.Event()
 
         t = threading.Thread(target=run, args=(stop, api), daemon=True)

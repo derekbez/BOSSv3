@@ -16,7 +16,7 @@ class TestAdminBossAdmin:
     def test_run_displays_admin_url(self) -> None:
         """The app should display the /admin URL on screen."""
         api = MagicMock()
-        api.config.system.webui_port = 8080
+        api.get_webui_port.return_value = 8080
         stop = threading.Event()
         stop.set()  # Pre-set so run() returns immediately
 
@@ -30,7 +30,7 @@ class TestAdminBossAdmin:
     def test_run_uses_configured_port(self) -> None:
         """Should use the webui_port from config."""
         api = MagicMock()
-        api.config.system.webui_port = 9999
+        api.get_webui_port.return_value = 9999
         stop = threading.Event()
         stop.set()
 
@@ -54,7 +54,7 @@ class TestAdminBossAdmin:
     def test_run_waits_for_stop_event(self) -> None:
         """The app should block on stop_event.wait()."""
         api = MagicMock()
-        api.config.system.webui_port = 8080
+        api.get_webui_port.return_value = 8080
         stop = threading.Event()
 
         # Run in a thread and verify it blocks

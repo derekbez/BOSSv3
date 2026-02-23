@@ -67,6 +67,17 @@ class TestAppAPIConfig:
         assert "lat" in loc
         assert "lon" in loc
 
+    def test_helper_methods_expose_system_values(self, api: AppAPI):
+        # default BossConfig from the fixture has known defaults
+        assert api.get_webui_port() == 8080
+        assert api.is_dev_mode() is False
+
+        # you can also manipulate the underlying config if needed
+        api._config.system.webui_port = 1234
+        api._config.system.dev_mode = True
+        assert api.get_webui_port() == 1234
+        assert api.is_dev_mode() is True
+
 
 class TestAppAPIPaths:
     def test_get_app_path(self, api: AppAPI, tmp_path):

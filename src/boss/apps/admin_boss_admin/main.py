@@ -27,7 +27,7 @@ def _get_local_ip() -> str:
 
 def run(stop_event: threading.Event, api: "AppAPI") -> None:
     """Show admin panel URL on the kiosk screen."""
-    port = api.config.system.webui_port
+    port = api.get_webui_port()
     ip = _get_local_ip()
 
     api.screen.display_html(
