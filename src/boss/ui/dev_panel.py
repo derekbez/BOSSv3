@@ -11,6 +11,7 @@ Only rendered when the hardware factory is :class:`MockHardwareFactory`.
 from __future__ import annotations
 
 import logging as _logging
+from typing import Any
 
 from nicegui import ui
 
@@ -62,24 +63,29 @@ class DevPanel:
         self._led_badges: dict[str, ui.badge] = {}
         # 7-segment display label
         self._display_label: ui.label | None = None
-        # Switch slider ref
-        self._switch_slider: ui.slider | None = None
+        # Switch bank (8-bit) refs
+        self._switch_toggles: list[Any] = []
         self._switch_label: ui.label | None = None
+        self._syncing_switch_bank: bool = False
 
     def build(self) -> None:
         """Render the dev panel inline (no collapsible wrapper)."""
         sw = self._screen_width
         with ui.column().classes("w-full items-center").style(
-            f"max-width: {sw}px; gap: 8px; padding: 8px 0 4px 0;"
+            f"max-width: {sw}px; gap: 4px; padding: 2px 0 2px 0;"
         ):
             # Thin separator between screen and controls
             ui.separator().style("background: #444444; margin: 0;")
 
-            with ui.column().classes("w-full").style(
-                "padding: 4px 12px; gap: 10px;"
+            with ui.row().classes("w-full items-start justify-between").style(
+                "padding: 2px 12px; gap: 12px; flex-wrap: nowrap;"
             ):
-                self._build_controls_row()
-                self._build_switch_row()
+                # Left: 7-seg + 8 toggle switches (physical switch bank)
+                self._build_left_switch_bank()
+                # Middle: square red GO button
+                self._build_go_button()
+                # Right: 4 buttons each with adjacent LED
+                self._build_right_buttons_and_leds()
 
         # Subscribe to output events for live updates
         self._bus.subscribe(events.LED_STATE_CHANGED, self._on_led_changed)
@@ -93,46 +99,17 @@ class DevPanel:
     # Build sections
     # ------------------------------------------------------------------
 
-    def _build_controls_row(self) -> None:
-        """Single row: LEDs | colour buttons | Go button | 7-seg display."""
-        with ui.row().classes("w-full items-center justify-between").style(
-            "gap: 12px; flex-wrap: nowrap;"
-        ):
-            # LED indicators
-            with ui.row().classes("items-center gap-2"):
-                for color in ["red", "yellow", "green", "blue"]:
-                    badge = ui.badge("", color=color).style(
-                        "width: 18px; height: 18px; border-radius: 50%; "
-                        "background: #444444; min-width: 18px;"
-                    )
-                    self._led_badges[color] = badge
+    # ------------------------------------------------------------------
+    # New physical-layout build sections
+    # ------------------------------------------------------------------
 
-            # Colour buttons
-            with ui.row().classes("items-center gap-1"):
-                for color in ["red", "yellow", "green", "blue"]:
-                    shortcut = {"red": "1", "yellow": "2", "green": "3", "blue": "4"}
-                    ui.button(
-                        shortcut[color],
-                        on_click=lambda _, c=color: self._on_button_click(c),
-                    ).style(
-                        f"background: {_BUTTON_COLORS[color]} !important; "
-                        "color: white; min-width: 40px; height: 36px; "
-                        "font-weight: bold; padding: 0 8px;"
-                    ).tooltip(f"{color.title()} button (key: {shortcut[color]})")
+    def _build_left_switch_bank(self) -> None:
+        """Left side of panel: 7-seg display + 8 toggle switches (2x4)."""
+        value = self._factory.display.last_value
+        text = f"{value:4d}" if value is not None else "----"
 
-            # Go button
-            ui.button(
-                "GO",
-                on_click=self._on_go_click,
-            ).style(
-                "background: #228B22 !important; color: white; "
-                "font-size: 16px; font-weight: bold; min-width: 64px; "
-                "height: 36px; padding: 0 12px;"
-            ).tooltip("Launch app (key: Space)")
-
-            # 7-segment display readout
-            value = self._factory.display.last_value
-            text = f"{value:4d}" if value is not None else "----"
+        with ui.column().classes("items-start").style("gap: 8px; flex: 1 1 0;"):
+            # 7-segment display readout (matches physical placement on left)
             self._display_label = ui.label(text).style(
                 "font-family: 'Courier New', monospace; font-size: 28px; "
                 "color: #00ff00; background: #111111; padding: 4px 12px; "
@@ -140,23 +117,71 @@ class DevPanel:
                 "letter-spacing: 8px; min-width: 100px; text-align: center;"
             )
 
-    def _build_switch_row(self) -> None:
-        """Switch slider (0–255) with binary readout."""
-        with ui.row().classes("w-full items-center gap-4"):
-            ui.label("SW").style(
-                "color: #888888; font-size: 12px; font-weight: bold;"
-            )
-            self._switch_slider = ui.slider(
-                min=0, max=255, step=1, value=self._factory.switches.get_value(),
-                on_change=lambda e: self._on_switch_slide(e.value),
-            ).classes("flex-grow").style("color: #00aaff;")
+            ui.label("SWITCHES").style("color: #888888; font-size: 12px; font-weight: bold;")
 
-            self._switch_label = ui.label(
-                self._format_switch_value(self._factory.switches.get_value())
-            ).style(
+            self._switch_toggles = []
+            current = self._factory.switches.get_value()
+
+            # Two rows of four toggles (8-bit bank)
+            for row in (0, 1):
+                with ui.row().classes("items-center").style("gap: 10px;"):
+                    for col in range(4):
+                        bit_index = row * 4 + col
+                        is_on = bool(current & (1 << bit_index))
+                        toggle = ui.switch(
+                            text=str(bit_index),
+                            value=is_on,
+                            on_change=lambda e, b=bit_index: self._on_switch_toggle(b, bool(e.value)),
+                        ).style(
+                            "font-size: 11px; color: #ffffff;"
+                        )
+                        self._switch_toggles.append(toggle)
+
+            self._switch_label = ui.label(self._format_switch_value(current)).style(
                 "font-family: 'Courier New', monospace; font-size: 13px; "
                 "color: #ffffff; min-width: 110px;"
             )
+
+    def _build_go_button(self) -> None:
+        """Middle of panel: large square red GO button."""
+        with ui.column().classes("items-center justify-start").style("min-width: 90px; gap: 6px;"):
+            ui.label("GO").style("color: #888888; font-size: 12px; font-weight: bold;")
+            ui.button(
+                "GO",
+                on_click=self._on_go_click,
+            ).style(
+                "background: #cc3333 !important; color: white; "
+                "font-size: 16px; font-weight: bold; width: 72px; height: 72px; "
+                "border-radius: 6px;"
+            ).tooltip("Launch app (key: Space)")
+
+    def _build_right_buttons_and_leds(self) -> None:
+        """Right side: 4 buttons with their adjacent LED indicators."""
+        shortcut = {"red": "1", "yellow": "2", "green": "3", "blue": "4"}
+
+        with ui.column().classes("items-end").style("gap: 8px; flex: 1 1 0;"):
+            ui.label("BUTTONS").style("color: #888888; font-size: 12px; font-weight: bold;")
+
+            # Arrange as a 2x2 cluster; each pair = LED + button
+            colors = ["red", "yellow", "green", "blue"]
+            for row in (0, 1):
+                with ui.row().classes("items-center").style("gap: 14px;"):
+                    for col in range(2):
+                        color = colors[row * 2 + col]
+                        with ui.row().classes("items-center").style("gap: 8px;"):
+                            badge = ui.badge("").style(
+                                "width: 18px; height: 18px; border-radius: 50%; "
+                                "background: #444444; min-width: 18px;"
+                            )
+                            self._led_badges[color] = badge
+
+                            ui.button(
+                                shortcut[color],
+                                on_click=lambda _, c=color: self._on_button_click(c),
+                            ).style(
+                                "background: #333333 !important; color: white; "
+                                "min-width: 44px; height: 36px; font-weight: bold; padding: 0 8px;"
+                            ).tooltip(f"{color.title()} button (key: {shortcut[color]})")
 
     def _build_keyboard_handler(self) -> None:
         """Wire keyboard shortcuts: 1-4 for buttons, Space for Go, Up/Down for switch."""
@@ -196,9 +221,15 @@ class DevPanel:
         """Simulate a Go button press via mock hardware."""
         self._factory.go_button.simulate_press()
 
-    def _on_switch_slide(self, value: float) -> None:
-        """Simulate a switch change via mock hardware."""
-        self._factory.switches.simulate_change(int(value))
+    def _on_switch_toggle(self, bit_index: int, is_on: bool) -> None:
+        """Simulate toggling a single switch bit (0..7)."""
+        if self._syncing_switch_bank:
+            return
+
+        current = self._factory.switches.get_value()
+        mask = 1 << bit_index
+        new_val = (current | mask) if is_on else (current & ~mask)
+        self._factory.switches.simulate_change(new_val)
 
     def _adjust_switch(self, delta: int) -> None:
         """Increment/decrement switch value."""
@@ -234,21 +265,46 @@ class DevPanel:
                 )
 
     async def _on_display_updated(self, event: Event) -> None:
-        """Update 7-segment readout."""
+        """Update 7-segment readout.
+
+        The NiceGUI elements we update may have been torn down by the time
+        an event arrives (for example during application shutdown).  In that
+        case writing to ``.text`` will raise ``RuntimeError``; the original
+        code let the exception bubble out and triggered the event bus to
+        unsubscribe the handler.  We simply ignore such errors, since the
+        panel is no longer visible.
+        """
         value = event.payload.get("value")
         if self._display_label:
-            if value is not None:
-                self._display_label.text = f"{value:4d}"
-            else:
-                self._display_label.text = "----"
+            try:
+                if value is not None:
+                    self._display_label.text = f"{value:4d}"
+                else:
+                    self._display_label.text = "----"
+            except RuntimeError:
+                _log.debug("display_label client gone, ignoring update")
 
     async def _on_switch_changed(self, event: Event) -> None:
-        """Keep slider and label in sync when switch changes from elsewhere."""
+        """Keep the switch bank and label in sync with switch changes."""
         new_value = event.payload.get("new_value", 0)
-        if self._switch_slider:
-            self._switch_slider.value = new_value
-        if self._switch_label:
-            self._switch_label.text = self._format_switch_value(new_value)
+        self._syncing_switch_bank = True
+        try:
+            # Update toggle states
+            for bit_index, toggle in enumerate(self._switch_toggles):
+                try:
+                    toggle.value = bool(new_value & (1 << bit_index))
+                except RuntimeError:
+                    _log.debug("switch toggle client gone, ignoring update")
+
+            # Update readout
+            if self._switch_label:
+                try:
+                    self._switch_label.text = self._format_switch_value(new_value)
+                except RuntimeError:
+                    _log.debug("switch_label client gone, ignoring update")
+        finally:
+            self._syncing_switch_bank = False
+
 
     # ------------------------------------------------------------------
     # Helpers

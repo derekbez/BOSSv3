@@ -135,11 +135,21 @@ class BossLayout:
     ) -> None:
         """Render the app display area and bind the screen."""
         bar_h = self._STATUS_BAR_HEIGHT
+
+        # In kiosk mode we maximize the screen to the available viewport height.
+        # In dev mode we keep the screen at its configured pixel size so the
+        # on-screen dev panel can sit directly underneath without a large gap.
+        if self._config.system.dev_mode:
+            width_rule = f"min(100%, {screen_width}px)"
+        else:
+            width_rule = f"min(100%, calc((100vh - {bar_h}px) * {screen_ratio:.6f}))"
+
         with ui.column().classes("items-center").style(
             "background: #000000; "
-            f"width: min(100%, calc((100vh - {bar_h}px) * {screen_ratio:.6f})); "
+            f"width: {width_rule}; "
             f"max-width: {screen_width}px; "
             f"aspect-ratio: {screen_width}/{screen_height}; "
+            "margin: 0; "
             "overflow: hidden;"
         ) as container:
             pass  # Content rendered dynamically by NiceGUIScreen
