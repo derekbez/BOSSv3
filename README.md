@@ -35,6 +35,9 @@ python -m boss.main
 
 Open `http://localhost:8080` in your browser.
 
+For full Windows developer setup (run, stop, restart, troubleshooting), see
+`deploy/WINDOWS_DEV_SETUP.md`.
+
 ### Install & Run (Raspberry Pi)
 
 ```bash
@@ -46,6 +49,8 @@ python -m boss.main
 ```
 
 Chromium kiosk opens automatically (see `deploy/` for systemd setup).
+
+For Raspberry Pi provisioning and deployment details, see `deploy/PI_SETUP.md`.
 
 ## Project Structure
 

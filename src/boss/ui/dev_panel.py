@@ -1,10 +1,11 @@
-"""Dev panel — hardware simulation sidebar for development on Windows/Mac.
+"""Dev panel — hardware simulation controls for development on Windows/Mac.
 
 Provides virtual buttons, switch slider, LED indicators, and 7-segment
-display readout.  Routes all actions through mock hardware objects so
-LED gating and the full event flow are exercised identically to real GPIO.
+display readout rendered inline below the app screen.  Routes all actions
+through mock hardware objects so LED gating and the full event flow are
+exercised identically to real GPIO.
 
-Only rendered when ``config.system.dev_mode is True``.
+Only rendered when the hardware factory is :class:`MockHardwareFactory`.
 """
 
 from __future__ import annotations
@@ -44,11 +45,18 @@ class DevPanel:
         factory: The :class:`MockHardwareFactory` whose objects drive
             the simulation.
         event_bus: The global event bus for subscribing to output events.
+        screen_width: Maximum pixel width to constrain the panel to.
     """
 
-    def __init__(self, factory: MockHardwareFactory, event_bus: EventBus) -> None:
+    def __init__(
+        self,
+        factory: MockHardwareFactory,
+        event_bus: EventBus,
+        screen_width: int = 1024,
+    ) -> None:
         self._factory = factory
         self._bus = event_bus
+        self._screen_width = screen_width
 
         # LED indicator elements (populated during build)
         self._led_badges: dict[str, ui.badge] = {}
@@ -59,25 +67,19 @@ class DevPanel:
         self._switch_label: ui.label | None = None
 
     def build(self) -> None:
-        """Render the dev panel inside the current NiceGUI page context."""
+        """Render the dev panel inline (no collapsible wrapper)."""
+        sw = self._screen_width
         with ui.column().classes("w-full items-center").style(
-            "max-width: 840px; gap: 12px; padding-top: 4px;"
+            f"max-width: {sw}px; gap: 8px; padding: 8px 0 4px 0;"
         ):
-            # Collapsible panel
-            with ui.expansion("Dev Panel", icon="developer_board").classes(
-                "w-full"
-            ).style(
-                "background: #2d2d2d; border-radius: 8px; color: #ffffff;"
-            ) as expansion:
-                expansion.props('default-opened')
-                with ui.column().classes("w-full").style(
-                    "padding: 12px; gap: 16px;"
-                ):
-                    self._build_leds_and_buttons()
-                    ui.separator().style("background: #555555;")
-                    self._build_switch()
-                    ui.separator().style("background: #555555;")
-                    self._build_display()
+            # Thin separator between screen and controls
+            ui.separator().style("background: #444444; margin: 0;")
+
+            with ui.column().classes("w-full").style(
+                "padding: 4px 12px; gap: 10px;"
+            ):
+                self._build_controls_row()
+                self._build_switch_row()
 
         # Subscribe to output events for live updates
         self._bus.subscribe(events.LED_STATE_CHANGED, self._on_led_changed)
@@ -91,58 +93,59 @@ class DevPanel:
     # Build sections
     # ------------------------------------------------------------------
 
-    def _build_leds_and_buttons(self) -> None:
-        """LED indicators + colour buttons + Go button."""
-        ui.label("Hardware Controls").style(
-            "color: #00aaff; font-size: 14px; font-weight: bold;"
-        )
+    def _build_controls_row(self) -> None:
+        """Single row: LEDs | colour buttons | Go button | 7-seg display."""
+        with ui.row().classes("w-full items-center justify-between").style(
+            "gap: 12px; flex-wrap: nowrap;"
+        ):
+            # LED indicators
+            with ui.row().classes("items-center gap-2"):
+                for color in ["red", "yellow", "green", "blue"]:
+                    badge = ui.badge("", color=color).style(
+                        "width: 18px; height: 18px; border-radius: 50%; "
+                        "background: #444444; min-width: 18px;"
+                    )
+                    self._led_badges[color] = badge
 
-        with ui.row().classes("w-full items-start justify-between"):
-            # LEDs + buttons in a 2×2 grid
-            with ui.column().classes("items-center gap-2"):
-                # LED indicators row
-                with ui.row().classes("gap-4"):
-                    for color in ["red", "yellow", "green", "blue"]:
-                        with ui.column().classes("items-center gap-1"):
-                            badge = ui.badge("", color=color).style(
-                                "width: 20px; height: 20px; border-radius: 50%; "
-                                f"background: #444444; min-width: 20px;"
-                            )
-                            self._led_badges[color] = badge
-                            ui.label(color.upper()).style(
-                                "font-size: 10px; color: #888888;"
-                            )
-
-                # Buttons row
-                with ui.row().classes("gap-2"):
-                    for color in ["red", "yellow", "green", "blue"]:
-                        shortcut = {"red": "1", "yellow": "2", "green": "3", "blue": "4"}
-                        ui.button(
-                            shortcut[color],
-                            on_click=lambda _, c=color: self._on_button_click(c),
-                        ).style(
-                            f"background: {_BUTTON_COLORS[color]} !important; "
-                            "color: white; min-width: 50px; font-weight: bold;"
-                        ).tooltip(f"{color.title()} button (key: {shortcut[color]})")
+            # Colour buttons
+            with ui.row().classes("items-center gap-1"):
+                for color in ["red", "yellow", "green", "blue"]:
+                    shortcut = {"red": "1", "yellow": "2", "green": "3", "blue": "4"}
+                    ui.button(
+                        shortcut[color],
+                        on_click=lambda _, c=color: self._on_button_click(c),
+                    ).style(
+                        f"background: {_BUTTON_COLORS[color]} !important; "
+                        "color: white; min-width: 40px; height: 36px; "
+                        "font-weight: bold; padding: 0 8px;"
+                    ).tooltip(f"{color.title()} button (key: {shortcut[color]})")
 
             # Go button
-            with ui.column().classes("items-center gap-1"):
-                ui.button(
-                    "GO",
-                    on_click=self._on_go_click,
-                ).style(
-                    "background: #228B22 !important; color: white; "
-                    "font-size: 18px; font-weight: bold; min-width: 80px; "
-                    "min-height: 50px;"
-                ).tooltip("Launch app (key: Space)")
+            ui.button(
+                "GO",
+                on_click=self._on_go_click,
+            ).style(
+                "background: #228B22 !important; color: white; "
+                "font-size: 16px; font-weight: bold; min-width: 64px; "
+                "height: 36px; padding: 0 12px;"
+            ).tooltip("Launch app (key: Space)")
 
-    def _build_switch(self) -> None:
-        """Switch slider (0–255) with binary display."""
-        ui.label("Switch (0–255)").style(
-            "color: #00aaff; font-size: 14px; font-weight: bold;"
-        )
+            # 7-segment display readout
+            value = self._factory.display.last_value
+            text = f"{value:4d}" if value is not None else "----"
+            self._display_label = ui.label(text).style(
+                "font-family: 'Courier New', monospace; font-size: 28px; "
+                "color: #00ff00; background: #111111; padding: 4px 12px; "
+                "border-radius: 4px; text-shadow: 0 0 8px #00ff00; "
+                "letter-spacing: 8px; min-width: 100px; text-align: center;"
+            )
 
+    def _build_switch_row(self) -> None:
+        """Switch slider (0–255) with binary readout."""
         with ui.row().classes("w-full items-center gap-4"):
+            ui.label("SW").style(
+                "color: #888888; font-size: 12px; font-weight: bold;"
+            )
             self._switch_slider = ui.slider(
                 min=0, max=255, step=1, value=self._factory.switches.get_value(),
                 on_change=lambda e: self._on_switch_slide(e.value),
@@ -151,23 +154,9 @@ class DevPanel:
             self._switch_label = ui.label(
                 self._format_switch_value(self._factory.switches.get_value())
             ).style(
-                "font-family: 'Courier New', monospace; font-size: 14px; "
-                "color: #ffffff; min-width: 120px;"
+                "font-family: 'Courier New', monospace; font-size: 13px; "
+                "color: #ffffff; min-width: 110px;"
             )
-
-    def _build_display(self) -> None:
-        """7-segment display readout."""
-        ui.label("7-Segment Display").style(
-            "color: #00aaff; font-size: 14px; font-weight: bold;"
-        )
-        value = self._factory.display.last_value
-        text = f"{value:4d}" if value is not None else "----"
-        self._display_label = ui.label(text).style(
-            "font-family: 'Courier New', monospace; font-size: 32px; "
-            "color: #00ff00; background: #111111; padding: 8px 16px; "
-            "border-radius: 4px; text-shadow: 0 0 8px #00ff00; "
-            "letter-spacing: 8px; min-width: 120px; text-align: center;"
-        )
 
     def _build_keyboard_handler(self) -> None:
         """Wire keyboard shortcuts: 1-4 for buttons, Space for Go, Up/Down for switch."""

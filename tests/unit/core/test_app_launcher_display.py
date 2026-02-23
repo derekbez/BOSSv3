@@ -11,12 +11,16 @@ from boss.core.models.event import Event
 class _DummyBus:
     def __init__(self) -> None:
         self.subscriptions: list[tuple[str, object]] = []
+        self.published: list[tuple[str, dict]] = []
 
     def subscribe(self, event_type: str, handler: object) -> None:
         self.subscriptions.append((event_type, handler))
 
     async def publish(self, event_type: str, payload: dict) -> None:
-        return None
+        self.published.append((event_type, payload))
+
+    def publish_threadsafe(self, event_type: str, payload: dict | None = None) -> None:
+        self.published.append((event_type, payload or {}))
 
 
 @pytest.fixture
@@ -42,12 +46,12 @@ def launcher_parts():
         config=config,
         secrets=None,
     )
-    return launcher, app_runner, display
+    return launcher, bus, app_runner, display, switches
 
 
 @pytest.mark.asyncio
 async def test_switch_change_updates_display_when_idle(launcher_parts):
-    launcher, app_runner, display = launcher_parts
+    launcher, bus, app_runner, display, _switches = launcher_parts
     app_runner.is_running = False
 
     event = Event(event_type="input.switch.changed", payload={"new_value": 123})
@@ -58,10 +62,21 @@ async def test_switch_change_updates_display_when_idle(launcher_parts):
 
 @pytest.mark.asyncio
 async def test_switch_change_does_not_update_display_when_running(launcher_parts):
-    launcher, app_runner, display = launcher_parts
+    launcher, bus, app_runner, display, _switches = launcher_parts
     app_runner.is_running = True
 
     event = Event(event_type="input.switch.changed", payload={"new_value": 123})
     await launcher._on_switch_changed(event)
 
     display.show_number.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_switch_change_publishes_display_updated(launcher_parts):
+    launcher, bus, app_runner, display, _switches = launcher_parts
+    app_runner.is_running = False
+
+    event = Event(event_type="input.switch.changed", payload={"new_value": 42})
+    await launcher._on_switch_changed(event)
+
+    assert ("output.display.updated", {"value": 42}) in bus.published

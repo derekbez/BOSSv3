@@ -128,6 +128,7 @@ class AppLauncher:
             return
         try:
             self._display.show_number(new_value)
+            await self._bus.publish(events.DISPLAY_UPDATED, {"value": new_value})
         except Exception:
             _log.debug("Could not update display for switch change")
 
@@ -140,6 +141,7 @@ class AppLauncher:
         self._screen.clear()
         self._screen.display_text(f"Launching {app_name}...")
         self._display.show_number(switch_value)
+        self._bus.publish_threadsafe(events.DISPLAY_UPDATED, {"value": switch_value})
 
     def _post_app_cleanup(self) -> None:
         """Reset hardware to idle state after an app finishes."""
@@ -147,7 +149,9 @@ class AppLauncher:
         self._leds.all_off()
         # Restore switch value on 7-segment display.
         try:
-            self._display.show_number(self._switches.get_value())
+            val = self._switches.get_value()
+            self._display.show_number(val)
+            self._bus.publish_threadsafe(events.DISPLAY_UPDATED, {"value": val})
         except Exception:
             _log.debug("Could not restore display after app cleanup")
 

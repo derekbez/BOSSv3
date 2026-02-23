@@ -99,7 +99,11 @@ class AppRunner:
         """Thread target: import & invoke the app's ``run()`` function."""
         self._event_bus.publish_threadsafe(
             events.APP_STARTED,
-            {"app_name": app_name, "switch_value": 0},
+            {
+                "app_name": app_name,
+                "display_name": manifest.name,
+                "switch_value": 0,
+            },
         )
         try:
             entry = app_dir / manifest.entry_point

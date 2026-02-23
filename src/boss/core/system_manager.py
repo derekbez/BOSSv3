@@ -122,7 +122,9 @@ class SystemManager:
         self._bus.subscribe(events.SHUTDOWN_REQUESTED, self._on_shutdown_requested)
 
         # 7. Show initial switch value on display
-        display.show_number(switches.get_value())
+        initial_sw = switches.get_value()
+        display.show_number(initial_sw)
+        await self._bus.publish(events.DISPLAY_UPDATED, {"value": initial_sw})
 
         hw_type = "gpio" if not self._config.system.dev_mode else "mock"
         await self._bus.publish(events.SYSTEM_STARTED, {"hardware_type": hw_type})

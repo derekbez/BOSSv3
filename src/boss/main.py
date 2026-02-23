@@ -83,7 +83,11 @@ def main() -> None:
     if isinstance(factory, MockHardwareFactory):
         from boss.ui.dev_panel import DevPanel
 
-        dev_panel = DevPanel(factory=factory, event_bus=bus)
+        dev_panel = DevPanel(
+            factory=factory,
+            event_bus=bus,
+            screen_width=config.hardware.screen_width,
+        )
 
         @ui.page("/")
         def _index_with_dev():
@@ -96,6 +100,19 @@ def main() -> None:
     async def on_startup() -> None:
         _log.info("NiceGUI startup — starting BOSS system")
         await system.start()
+
+        # Wire app resolver now that AppManager is available
+        mgr = system.app_manager
+        if mgr is not None:
+
+            def _resolve(sw: int) -> tuple[str | None, str | None]:
+                name = mgr.get_app_for_switch(sw)
+                if name is None:
+                    return None, None
+                m = mgr.get_manifest(name)
+                return name, (m.name if m else name)
+
+            layout.set_app_resolver(_resolve)
 
         # Now that SystemManager.start() has been called, wire admin page
         nonlocal admin_page
