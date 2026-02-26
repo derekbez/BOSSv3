@@ -16,6 +16,7 @@
     "BOSS_APP_AVIATIONSTACK_API_KEY"
   ],
   "config": {
+    "airport": "LHR",
     "request_timeout_seconds": 6,
     "refresh_seconds": 600
   }

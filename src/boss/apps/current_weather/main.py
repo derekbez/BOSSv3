@@ -6,6 +6,7 @@ Green = manual refresh.  Requires global location.
 
 from __future__ import annotations
 
+import datetime
 import time
 import threading
 from typing import TYPE_CHECKING, Any
@@ -47,7 +48,6 @@ def _format_next_hours(data: dict, hours: int = 8) -> str:
     winds = hourly.get("windspeed_10m", [])
 
     # Find current hour index
-    import datetime
     now_str = datetime.datetime.now().strftime("%Y-%m-%dT%H")
     start = 0
     for i, t in enumerate(times):

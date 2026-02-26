@@ -45,6 +45,8 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
         _show()
 
     def on_button(event: Any) -> None:
+        if event.payload is None:
+            return
         if event.payload.get("button") == "yellow":
             _next()
 

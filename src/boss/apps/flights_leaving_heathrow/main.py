@@ -1,4 +1,4 @@
-"""Flights Leaving Heathrow — Aviationstack departures.  Green = refresh."""
+"""Flights Departures — Aviationstack departures for configurable airport.  Green = refresh."""
 
 from __future__ import annotations
 
@@ -11,12 +11,12 @@ from boss.apps._lib.http_helpers import fetch_json
 API_URL = "https://api.aviationstack.com/v1/flights"
 
 
-def _fetch(api_key: str, timeout: float) -> str:
+def _fetch(api_key: str, airport: str, timeout: float) -> str:
     if not api_key:
         raise RuntimeError("Missing secret: BOSS_APP_AVIATIONSTACK_API_KEY")
     data = fetch_json(
         API_URL,
-        params={"access_key": api_key, "dep_iata": "LHR", "limit": "6"},
+        params={"access_key": api_key, "dep_iata": airport, "limit": "6"},
         timeout=timeout,
     )
     flights = data.get("data", [])
@@ -38,15 +38,16 @@ if TYPE_CHECKING:
 
 def run(stop_event: threading.Event, api: "AppAPI") -> None:
     cfg = api.get_app_config()
+    airport = cfg.get("airport", "LHR")
     refresh = float(cfg.get("refresh_seconds", 600))
     timeout = float(cfg.get("request_timeout_seconds", 6))
     api_key = api.get_secret("BOSS_APP_AVIATIONSTACK_API_KEY")
-    title = "LHR Departures"
+    title = f"{airport} Departures"
     last_fetch = 0.0
 
     def _show() -> None:
         try:
-            text = _fetch(api_key, timeout)
+            text = _fetch(api_key, airport, timeout)
             api.screen.clear()
             api.screen.display_text(f"{title}\n\n{text}", align="left")
         except Exception as exc:

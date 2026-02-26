@@ -29,7 +29,7 @@ def _fetch(lat: float, lon: float, radius: int, api_key: str, timeout: float) ->
             sightings.append((name, loc))
             seen.add((name, loc))
     if not sightings:
-        raise ValueError("No sightings")
+        return [("No recent sightings in this area.", "")]
     return sightings
 
 

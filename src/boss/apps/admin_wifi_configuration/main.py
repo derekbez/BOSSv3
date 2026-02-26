@@ -9,12 +9,15 @@ in the NiceGUI admin panel.
 
 from __future__ import annotations
 
+import logging
 import shutil
 import subprocess
 import threading
 from typing import TYPE_CHECKING
 
 from boss.apps._lib.net_utils import get_local_ip
+
+_log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from boss.core.app_api import AppAPI
@@ -36,8 +39,8 @@ def _get_current_wifi() -> str | None:
             parts = line.split(":")
             if len(parts) >= 2 and "wireless" in parts[1].lower():
                 return parts[0]
-    except Exception:
-        pass
+    except Exception as exc:
+        _log.debug("Failed to get current WiFi: %s", exc)
     return None
 
 
@@ -61,8 +64,8 @@ def _scan_networks() -> list[dict[str, str]]:
                 })
         # Sort by signal strength descending
         networks.sort(key=lambda n: int(n["signal"] or "0"), reverse=True)
-    except Exception:
-        pass
+    except Exception as exc:
+        _log.debug("WiFi scan failed: %s", exc)
     return networks
 
 

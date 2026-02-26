@@ -1,4 +1,4 @@
-"""Today in Music — top track for a genre tag via Last.fm.  Green = refresh."""
+"""Top Tracks — top tracks for a genre tag via Last.fm.  Green = refresh."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
     refresh = float(cfg.get("refresh_seconds", 3600))
     timeout = float(cfg.get("request_timeout_seconds", 6))
     api_key = api.get_secret("BOSS_APP_LASTFM_API_KEY")
-    title = f"Music: {tag}"
+    title = f"Top Tracks: {tag}"
     last_fetch = 0.0
 
     def _show() -> None:

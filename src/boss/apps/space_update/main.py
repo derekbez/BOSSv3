@@ -1,8 +1,10 @@
-"""Space Update — NASA APOD or Mars Curiosity.  Green = refresh."""
+"""Space Update — NASA APOD or Mars Curiosity with mode toggle.
+
+Yellow = APOD mode, Green = refresh current, Blue = Mars mode.
+"""
 
 from __future__ import annotations
 
-import random
 import time
 import threading
 from typing import TYPE_CHECKING, Any
@@ -17,9 +19,9 @@ def _fetch_apod(api_key: str, timeout: float) -> str:
     data = fetch_json(APOD_URL, params={"api_key": api_key}, timeout=timeout)
     title = data.get("title", "?")
     explanation = data.get("explanation", "")
-    date = data.get("date", "")
+    date_str = data.get("date", "")
     snippet = explanation[:200] + "…" if len(explanation) > 200 else explanation
-    return f"NASA APOD ({date})\n\n{title}\n\n{snippet}"
+    return f"NASA APOD ({date_str})\n\n{title}\n\n{snippet}"
 
 
 def _fetch_mars(api_key: str, timeout: float) -> str:
@@ -43,27 +45,50 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
     refresh = float(cfg.get("refresh_seconds", 21600))
     timeout = float(cfg.get("request_timeout_seconds", 6))
     api_key = api.get_secret("BOSS_APP_NASA_API_KEY")
-    title = "Space"
     last_fetch = 0.0
+    mode = "apod"  # "apod" or "mars"
+
+    def _update_leds() -> None:
+        api.hardware.set_led("yellow", mode == "apod")
+        api.hardware.set_led("blue", mode == "mars")
 
     def _show() -> None:
         if not api_key:
             raise RuntimeError("Missing secret: BOSS_APP_NASA_API_KEY")
         try:
-            text = random.choice([_fetch_apod, _fetch_mars])(api_key, timeout)
+            if mode == "apod":
+                text = _fetch_apod(api_key, timeout)
+            else:
+                text = _fetch_mars(api_key, timeout)
             api.screen.clear()
-            api.screen.display_text(text, align="left")
+            api.screen.display_text(
+                f"{text}\n\n[YEL] APOD  [GRN] Refresh  [BLU] Mars",
+                font_size=16,
+                align="left",
+            )
         except Exception as exc:
             api.screen.clear()
-            api.screen.display_text(f"{title}\n\nErr: {exc}", align="left")
+            api.screen.display_text(f"Space\n\nErr: {exc}", align="left")
 
     def on_button(event: Any) -> None:
-        nonlocal last_fetch
-        if event.payload.get("button") == "green":
+        nonlocal last_fetch, mode
+        btn = event.payload.get("button")
+        if btn == "green":
+            last_fetch = time.time()
+            _show()
+        elif btn == "yellow":
+            mode = "apod"
+            _update_leds()
+            last_fetch = time.time()
+            _show()
+        elif btn == "blue":
+            mode = "mars"
+            _update_leds()
             last_fetch = time.time()
             _show()
 
     api.hardware.set_led("green", True)
+    _update_leds()
     sub_id = api.event_bus.subscribe("input.button.pressed", on_button)
     try:
         _show()
@@ -76,3 +101,5 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
     finally:
         api.event_bus.unsubscribe(sub_id)
         api.hardware.set_led("green", False)
+        api.hardware.set_led("yellow", False)
+        api.hardware.set_led("blue", False)

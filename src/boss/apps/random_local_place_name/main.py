@@ -26,7 +26,11 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
         places = ["(no places loaded)"]
 
     def _show() -> None:
-        place = random.choice(places) if places else "(empty list)"
+        if not places:
+            api.screen.clear()
+            api.screen.display_text("No places loaded", font_size=28, align="center")
+            return
+        place = random.choice(places)
         api.screen.clear()
         api.screen.display_text(f"Random Place\n\n{place}", font_size=28, align="center")
 

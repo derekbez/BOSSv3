@@ -24,42 +24,39 @@ These are mechanical patterns that repeat across 8–10 apps and should be fixed
 
 7. ~~**`constellation_of_the_night` — implement with local calculation.**~~ ✅ Added `ephem>=4.1,<5` to `pyproject.toml`. Uses `api.get_global_location()` for lat/lon, computes visible constellations via `ephem.Observer` with 30 bright stars. Shows constellation name, peak altitude, and compass direction. Green button refreshes. Auto-refresh every 600s. Moved to `NETWORK_APPS` in smoke tests (uses geolocation). Manifest bumped to 1.0.0.
 
-## Tier 2 — Bug fixes (one-liners)
+## Tier 2 — Bug fixes (one-liners) ✅ DONE
 
-8. **`random_local_place_name` — empty-list crash.** `random.choice(places)` crashes with `IndexError` if `places` is empty after loading. Change `_show()` to guard: `if not places: api.screen.display_text("No places loaded"); return`.
+8. ~~**`random_local_place_name` — empty-list crash.**~~ ✅ Added explicit empty-list guard in `_show()`: if `places` is empty, displays "No places loaded" and returns early instead of calling `random.choice()` on an empty list.
 
-9. **`current_weather` — move import to top-level.** The `import datetime` inside `_format_next_hours()` should move to the module top alongside other imports. Also consider adding timezone handling for consistency with the API's UTC timestamps.
+9. ~~**`current_weather` — move import to top-level.**~~ ✅ Moved `import datetime` from inside `_format_next_hours()` to the module-level imports block.
 
 10. ~~**`internet_speed_check` — fix `requires_network` (interim).**~~ ✅ Superseded by step 6 (real speedtest implemented).
 
-## Tier 3 — Upgrades (enhance existing working apps)
+## Tier 3 — Upgrades (enhance existing working apps) ✅ DONE
 
-11. **`color_of_the_day` — add colour swatch + API resilience.** ColourLovers API is unreliable. Add a fallback: if the API fails, generate a deterministic "colour of the day" from a hash of the date. Use `api.screen.display_html()` to show an actual colour swatch rectangle alongside the hex code. Keep ColourLovers as primary source when reachable.
+11. ~~**`color_of_the_day` — add colour swatch + API resilience.**~~ ✅ Added date-hash fallback (`_fallback_color()`) when ColourLovers API fails. Switched from `display_text()` to `display_html()` with a 120×120px colour swatch, hex code, and colour name. ColourLovers remains primary source.
 
-12. **`tiny_poem` — add pagination for long poems.** Currently uses `textwrap.wrap` directly. Replace with `TextPaginator` from `_lib/paginator.py` for poems that exceed one screen. Add yellow/blue button navigation like `on_this_day` does. Use `wrap_paragraphs()` from the paginator module for consistency.
+12. ~~**`tiny_poem` — add pagination for long poems.**~~ ✅ Replaced `textwrap.wrap` with `TextPaginator` + `wrap_paragraphs` from `_lib/paginator.py`. Yellow/blue buttons navigate pages. Green fetches a new poem. LEDs cleaned up on exit.
 
-13. **`space_update` — add toggle between APOD and Mars.** Currently picks one randomly. Add button interaction: green = refresh current, yellow = switch to APOD, blue = switch to Mars Curiosity. Light the corresponding LEDs when each mode is active. Consider using `DEMO_KEY` as a fallback for NASA API (rate-limited but functional).
+13. ~~**`space_update` — add toggle between APOD and Mars.**~~ ✅ Replaced `random.choice` with explicit mode toggle. Yellow = APOD mode, Blue = Mars mode, Green = refresh current. Mode-matching LEDs light up. Removed `import random`.
 
-14. **`public_domain_book_snippet` — show contiguous passages.** Currently shows random non-contiguous lines which read incoherently. Change to pick a random start position and show N contiguous lines. Add more `.txt` assets (e.g. public domain excerpts from Project Gutenberg). Add pagination with yellow/blue buttons for long passages.
+14. ~~**`public_domain_book_snippet` — show contiguous passages.**~~ ✅ Changed `random.sample` (non-contiguous) to `_pick_contiguous()` which selects N consecutive lines from a random start position. Added `TextPaginator` with yellow/blue navigation. Added two new `.txt` assets (Pride and Prejudice opening, Alice in Wonderland opening). Default `lines` bumped to 20.
 
-15. **`name_that_animal` — add fallback for unreliable API.** Zoo Animal API is on Heroku free tier and may cold-start or go offline. Add a local `animals_fallback.json` asset with ~50 animals. If the API call fails, serve from the fallback list. Log a warning when falling back.
+15. ~~**`name_that_animal` — add fallback for unreliable API.**~~ ✅ Created `assets/animals_fallback.json` with 50 animals. On API failure, falls back to random selection from local JSON. Logs info message when falling back. Shows "(offline)" in title when using fallback.
 
-16. **`today_in_music` — rename or fix mismatch.** "Today in Music" implies historical music events but actually shows top tracks for a genre tag via Last.fm. Either:
-    - (a) **Rename** to "Top Tracks" and update `display_name` + `description`, or
-    - (b) **Rewrite** to actually show music history events (e.g. use a "this day in music history" API or dataset)
-    - Recommend option (a) as it's honest and requires minimal code change.
+16. ~~**`today_in_music` — rename to "Top Tracks".**~~ ✅ Changed `display_name` to "Top Tracks" and `description` to "Top tracks for a genre tag (Last.fm)." in manifest. Updated docstring and title variable in code. Directory name unchanged to preserve switch mapping.
 
-17. **`flights_leaving_heathrow` — make airport configurable.** Airport is hardcoded to `LHR`. Add `"airport": "LHR"` to manifest `config` block and read it via `cfg.get("airport", "LHR")`. Update the title dynamically. Same change for `flight_status_favorite_airline` — make airline configurable via `config`.
+17. ~~**`flights_leaving_heathrow` — make airport configurable.**~~ ✅ Added `"airport": "LHR"` to manifest config. Code reads `cfg.get("airport", "LHR")` and uses it in API call and title. `flight_status_favorite_airline` already had configurable `iata` — no change needed.
 
-## Tier 4 — Polish (nice-to-have)
+## Tier 4 — Polish (nice-to-have) ✅ DONE
 
-18. **`joke_of_the_moment` — refactor closure.** Replace mutable `[None]` list pattern with `nonlocal` keyword for `pending_punchline`. Minor code clarity improvement.
+18. ~~**`joke_of_the_moment` — refactor closure.**~~ ✅ Replaced `pending_punchline: list[str | None] = [None]` mutable-container pattern with `pending_punchline: str | None = None` and `nonlocal pending_punchline` in both `_show_new()` and `on_button()`.
 
-19. **`app_jokes` — guard against None payload.** Add `if event.payload is None: return` guard in `on_button`. Defensive, edge-case only.
+19. ~~**`app_jokes` — guard against None payload.**~~ ✅ Added `if event.payload is None: return` guard at the top of `on_button()`.
 
-20. **`admin_wifi_configuration` — add logging on scan failure.** The silent `pass` in `_scan_networks` and `_get_current_wifi` exception handlers should log a debug message.
+20. ~~**`admin_wifi_configuration` — add logging on scan failure.**~~ ✅ Added module-level `_log = logging.getLogger(__name__)`. Changed silent `except: pass` in `_get_current_wifi()` and `_scan_networks()` to log debug messages via `_log.debug(...)`.
 
-21. **`bird_sightings_near_me` — friendlier "no sightings" message.** Currently raises `ValueError("No sightings")` which displays as an error. Return a user-friendly string instead.
+21. ~~**`bird_sightings_near_me` — friendlier "no sightings" message.**~~ ✅ Replaced `raise ValueError("No sightings")` with `return [("No recent sightings in this area.", "")]` — displays as a normal text line instead of an error.
 
 ## Apps confirmed OK as-is (no changes needed)
 

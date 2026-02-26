@@ -35,15 +35,16 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
     last_fetch = 0.0
 
     # State for two-part jokes
-    pending_punchline: list[str | None] = [None]  # mutable container for closure
+    pending_punchline: str | None = None
 
     def _show_new() -> None:
-        pending_punchline[0] = None
+        nonlocal pending_punchline
+        pending_punchline = None
         try:
             data = _fetch(category, joke_type, blacklist, timeout)
             if data.get("type") == "twopart":
                 setup = data.get("setup", "?")
-                pending_punchline[0] = data.get("delivery", "")
+                pending_punchline = data.get("delivery", "")
                 api.screen.clear()
                 api.screen.display_text(
                     f"{title}\n\n{setup}\n\n[GREEN] for punchline…",
@@ -58,14 +59,14 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
             api.screen.display_text(f"{title}\n\nErr: {exc}", align="left")
 
     def on_button(event: Any) -> None:
-        nonlocal last_fetch
+        nonlocal last_fetch, pending_punchline
         if event.payload.get("button") != "green":
             return
-        if pending_punchline[0] is not None:
+        if pending_punchline is not None:
             # Reveal punchline
             api.screen.clear()
-            api.screen.display_text(f"{title}\n\n{pending_punchline[0]}", align="left")
-            pending_punchline[0] = None
+            api.screen.display_text(f"{title}\n\n{pending_punchline}", align="left")
+            pending_punchline = None
         else:
             last_fetch = time.time()
             _show_new()
@@ -76,7 +77,7 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
         _show_new()
         last_fetch = time.time()
         while not stop_event.is_set():
-            if pending_punchline[0] is None and time.time() - last_fetch >= refresh:
+            if pending_punchline is None and time.time() - last_fetch >= refresh:
                 last_fetch = time.time()
                 _show_new()
             stop_event.wait(0.25)

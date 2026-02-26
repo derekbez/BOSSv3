@@ -1,7 +1,7 @@
 {
   "name": "today_in_music",
-  "display_name": "Today in Music",
-  "description": "Top track for a tag (Last.fm).",
+  "display_name": "Top Tracks",
+  "description": "Top tracks for a genre tag (Last.fm).",
   "version": "1.0.0",
   "author": "BOSS Team",
   "entry_point": "main.py",
