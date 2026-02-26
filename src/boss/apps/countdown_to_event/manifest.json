@@ -1,0 +1,21 @@
+{
+  "name": "countdown_to_event",
+  "display_name": "Countdown to Event",
+  "description": "Configurable countdown to a target date and time.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": false,
+  "tags": [
+    "utility"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [],
+  "config": {
+    "event_name": "Christmas",
+    "target_date": "2026-12-25",
+    "target_time": "00:00:00",
+    "refresh_seconds": 30
+  }
+}

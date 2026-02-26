@@ -1,0 +1,22 @@
+{
+  "name": "currency_exchange",
+  "display_name": "Currency Exchange",
+  "description": "Live exchange rates with pair cycling.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [],
+  "config": {
+    "base_currency": "GBP",
+    "target_currencies": ["USD", "EUR", "JPY", "AUD", "CHF"],
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 300
+  }
+}

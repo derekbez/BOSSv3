@@ -1,0 +1,24 @@
+{
+  "name": "earthquake_monitor",
+  "display_name": "Earthquake Monitor",
+  "description": "Recent significant earthquakes with paging.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network",
+    "science"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [],
+  "config": {
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 300,
+    "min_magnitude": 4.0,
+    "limit": 12,
+    "lines_per_page": 8
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "air_quality_index",
+  "display_name": "Air Quality Index",
+  "description": "Current AQI and pollutant levels.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network",
+    "science"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [],
+  "config": {
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 900
+  }
+}

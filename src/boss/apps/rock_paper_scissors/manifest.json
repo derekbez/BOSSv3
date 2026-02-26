@@ -1,0 +1,18 @@
+{
+  "name": "rock_paper_scissors",
+  "display_name": "Rock Paper Scissors",
+  "description": "Best-of-five against the CPU.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": false,
+  "tags": [
+    "game"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [],
+  "config": {
+    "rounds": 5
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "pomodoro_timer",
+  "display_name": "Pomodoro Timer",
+  "description": "Configurable work/break timer.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": false,
+  "tags": [
+    "utility"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [],
+  "config": {
+    "work_minutes": 25,
+    "short_break_minutes": 5,
+    "long_break_minutes": 15,
+    "long_break_every": 4
+  }
+}

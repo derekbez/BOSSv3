@@ -1,0 +1,19 @@
+{
+  "name": "number_guess",
+  "display_name": "Number Guess",
+  "description": "Guess a hidden number using range hints.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": false,
+  "tags": [
+    "game"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [],
+  "config": {
+    "min_number": 1,
+    "max_number": 100
+  }
+}

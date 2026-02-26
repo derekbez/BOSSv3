@@ -1,0 +1,19 @@
+{
+  "name": "math_challenge",
+  "display_name": "Math Challenge",
+  "description": "Fast 3-choice arithmetic quiz.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": false,
+  "tags": [
+    "game"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [],
+  "config": {
+    "operations": ["+", "-", "*"],
+    "max_number": 100
+  }
+}

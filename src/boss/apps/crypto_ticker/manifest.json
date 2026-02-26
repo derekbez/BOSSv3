@@ -1,0 +1,22 @@
+{
+  "name": "crypto_ticker",
+  "display_name": "Crypto Ticker",
+  "description": "Live crypto prices and 24h trend.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [],
+  "config": {
+    "coins": ["bitcoin", "ethereum", "solana"],
+    "vs_currency": "gbp",
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 180
+  }
+}

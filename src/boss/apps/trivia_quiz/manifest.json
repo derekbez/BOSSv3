@@ -1,0 +1,22 @@
+{
+  "name": "trivia_quiz",
+  "display_name": "Trivia Quiz",
+  "description": "3-choice trivia game with running score.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": true,
+  "tags": [
+    "game",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [],
+  "config": {
+    "category": "any",
+    "difficulty": "any",
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 600
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "sunrise_sunset",
+  "display_name": "Sunrise / Sunset",
+  "description": "Sunrise, sunset, and daylight timings for your location.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [],
+  "config": {
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 3600
+  }
+}

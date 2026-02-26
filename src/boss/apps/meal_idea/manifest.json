@@ -1,0 +1,21 @@
+{
+  "name": "meal_idea",
+  "display_name": "Meal Idea",
+  "description": "Random meal suggestion with paging.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": true,
+  "tags": [
+    "novelty",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [],
+  "config": {
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 3600,
+    "lines_per_page": 10
+  }
+}
