@@ -13,7 +13,7 @@ API_URL = "https://ws.audioscrobbler.com/2.0/"
 
 def _fetch(tag: str, api_key: str, timeout: float) -> str:
     if not api_key:
-        return "(no Last.fm API key set)"
+        raise RuntimeError("Missing secret: BOSS_APP_LASTFM_API_KEY")
     data = fetch_json(
         API_URL,
         params={
@@ -45,7 +45,7 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
     tag = cfg.get("tag", "rock")
     refresh = float(cfg.get("refresh_seconds", 3600))
     timeout = float(cfg.get("request_timeout_seconds", 6))
-    api_key = cfg.get("api_key") or api.get_secret("BOSS_APP_LASTFM_API_KEY")
+    api_key = api.get_secret("BOSS_APP_LASTFM_API_KEY")
     title = f"Music: {tag}"
     last_fetch = 0.0
 

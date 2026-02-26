@@ -10,23 +10,14 @@ in the NiceGUI admin panel.
 from __future__ import annotations
 
 import shutil
-import socket
 import subprocess
 import threading
 from typing import TYPE_CHECKING
 
+from boss.apps._lib.net_utils import get_local_ip
+
 if TYPE_CHECKING:
     from boss.core.app_api import AppAPI
-
-
-def _get_local_ip() -> str:
-    """Best-effort local IP address."""
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("8.8.8.8", 80))
-            return s.getsockname()[0]
-    except Exception:
-        return "localhost"
 
 
 def _has_nmcli() -> bool:
@@ -78,7 +69,7 @@ def _scan_networks() -> list[dict[str, str]]:
 def run(stop_event: threading.Event, api: "AppAPI") -> None:
     """Display WiFi status and available networks on the kiosk screen."""
     port = api.get_webui_port()
-    ip = _get_local_ip()
+    ip = get_local_ip()
 
     if api.is_dev_mode() or not _has_nmcli():
         api.screen.display_html(

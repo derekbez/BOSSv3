@@ -14,7 +14,7 @@ API_URL = "https://www.worldtides.info/api/v3"
 
 def _fetch(lat: float, lon: float, api_key: str, timeout: float) -> str:
     if not api_key:
-        return "(no WorldTides API key set)"
+        raise RuntimeError("Missing secret: BOSS_APP_WORLDTIDES_API_KEY")
     data = fetch_json(
         API_URL,
         params={"extremes": "", "lat": str(lat), "lon": str(lon), "key": api_key},
@@ -44,7 +44,7 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
     cfg = api.get_app_config()
     refresh = float(cfg.get("refresh_seconds", 10800))
     timeout = float(cfg.get("request_timeout_seconds", 6))
-    api_key = cfg.get("api_key") or api.get_secret("BOSS_APP_WORLDTIDES_API_KEY")
+    api_key = api.get_secret("BOSS_APP_WORLDTIDES_API_KEY")
     loc = api.get_global_location()
     lat, lon = loc["lat"], loc["lon"]
     title = "Tides"

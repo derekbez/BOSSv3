@@ -11,5 +11,7 @@
     "admin",
     "system"
   ],
-  "config": {}
+  "config": {},
+  "requires_network": false,
+  "required_env": []
 }

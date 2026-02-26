@@ -13,7 +13,7 @@ API_URL = "https://api.ipgeolocation.io/astronomy"
 
 def _fetch(lat: float, lon: float, api_key: str, timeout: float) -> str:
     if not api_key:
-        return "(no ipgeolocation API key set)"
+        raise RuntimeError("Missing secret: BOSS_APP_IPGEO_API_KEY")
     data = fetch_json(
         API_URL,
         params={"apiKey": api_key, "lat": str(lat), "long": str(lon)},
@@ -43,7 +43,7 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
     cfg = api.get_app_config()
     refresh = float(cfg.get("refresh_seconds", 21600))
     timeout = float(cfg.get("request_timeout_seconds", 6))
-    api_key = cfg.get("api_key") or api.get_secret("BOSS_APP_IPGEO_API_KEY")
+    api_key = api.get_secret("BOSS_APP_IPGEO_API_KEY")
     loc = api.get_global_location()
     lat, lon = loc["lat"], loc["lon"]
     title = "Moon Phase"

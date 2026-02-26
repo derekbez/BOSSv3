@@ -1,7 +1,7 @@
 {
   "name": "quote_of_the_day",
   "display_name": "Quote of the Day",
-  "description": "Fetch and display a random quote (Quotable API).",
+  "description": "Fetch and display a random quote (ZenQuotes API).",
   "version": "1.0.0",
   "author": "BOSS Team",
   "entry_point": "main.py",

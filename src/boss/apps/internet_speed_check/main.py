@@ -1,15 +1,26 @@
-"""Internet Speed Check — placeholder with simulated values.  Green = retest."""
+"""Internet Speed Check — real download/upload test.  Green = retest."""
 
 from __future__ import annotations
 
-import random
 import time
 import threading
 from typing import TYPE_CHECKING, Any
 
+import speedtest
+
 
 if TYPE_CHECKING:
     from boss.core.app_api import AppAPI
+
+
+def _run_test() -> dict[str, float]:
+    """Run a speed test and return download/upload in Mbps and ping in ms."""
+    st = speedtest.Speedtest()
+    st.get_best_server()
+    download = st.download() / 1_000_000  # bits → Mbps
+    upload = st.upload() / 1_000_000
+    ping = st.results.ping
+    return {"download": download, "upload": upload, "ping": ping}
 
 
 def run(stop_event: threading.Event, api: "AppAPI") -> None:
@@ -19,14 +30,21 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
     last_fetch = 0.0
 
     def _show() -> None:
-        down = random.uniform(20, 120)
-        up = random.uniform(10, 40)
-        ping = random.uniform(10, 60)
-        api.screen.clear()
-        api.screen.display_text(
-            f"{title}\n\nDown {down:.1f} Mbps\nUp   {up:.1f} Mbps\nPing {ping:.0f} ms",
-            align="left",
-        )
+        try:
+            api.screen.clear()
+            api.screen.display_text(f"{title}\n\nTesting…", align="left")
+            result = _run_test()
+            api.screen.clear()
+            api.screen.display_text(
+                f"{title}\n\n"
+                f"Down {result['download']:.1f} Mbps\n"
+                f"Up   {result['upload']:.1f} Mbps\n"
+                f"Ping {result['ping']:.0f} ms",
+                align="left",
+            )
+        except Exception as exc:
+            api.screen.clear()
+            api.screen.display_text(f"{title}\n\nErr: {exc}", align="left")
 
     def on_button(event: Any) -> None:
         nonlocal last_fetch

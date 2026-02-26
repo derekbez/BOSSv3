@@ -13,7 +13,7 @@ API_URL = "https://api.aviationstack.com/v1/flights"
 
 def _fetch(api_key: str, airline_iata: str, timeout: float) -> str:
     if not api_key:
-        return "(no Aviationstack API key set)"
+        raise RuntimeError("Missing secret: BOSS_APP_AVIATIONSTACK_API_KEY")
     data = fetch_json(
         API_URL,
         params={
@@ -45,7 +45,7 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
     iata = cfg.get("iata", "BA")
     refresh = float(cfg.get("refresh_seconds", 600))
     timeout = float(cfg.get("request_timeout_seconds", 6))
-    api_key = cfg.get("api_key") or api.get_secret("BOSS_APP_AVIATIONSTACK_API_KEY")
+    api_key = api.get_secret("BOSS_APP_AVIATIONSTACK_API_KEY")
     title = f"Flights: {iata}"
     last_fetch = 0.0
 

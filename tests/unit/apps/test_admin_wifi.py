@@ -7,7 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from boss.apps.admin_wifi_configuration.main import run, _has_nmcli, _get_local_ip
+from boss.apps.admin_wifi_configuration.main import run, _has_nmcli
+from boss.apps._lib.net_utils import get_local_ip
 
 
 class TestAdminWifiConfiguration:
@@ -57,8 +58,8 @@ class TestAdminWifiConfiguration:
         assert "/admin/wifi" in html
 
     def test_get_local_ip_returns_string(self) -> None:
-        """_get_local_ip should return a string."""
-        result = _get_local_ip()
+        """get_local_ip should return a string."""
+        result = get_local_ip()
         assert isinstance(result, str)
 
     def test_has_nmcli_returns_bool(self) -> None:

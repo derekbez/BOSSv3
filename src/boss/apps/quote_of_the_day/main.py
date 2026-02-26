@@ -1,4 +1,4 @@
-"""Quote of the Day — random quote from Quotable API.  Green = new quote."""
+"""Quote of the Day — random quote from ZenQuotes.  Green = new quote."""
 
 from __future__ import annotations
 
@@ -8,13 +8,15 @@ from typing import TYPE_CHECKING, Any
 
 from boss.apps._lib.http_helpers import fetch_json
 
-API_URL = "https://api.quotable.io/random"
+API_URL = "https://zenquotes.io/api/random"
 
 
 def _fetch(timeout: float) -> str:
     data = fetch_json(API_URL, timeout=timeout)
-    content = data.get("content", "").strip()
-    author = data.get("author", "Unknown")
+    # ZenQuotes returns a list: [{"q": "...", "a": "...", ...}]
+    entry = data[0] if isinstance(data, list) and data else data
+    content = entry.get("q", "").strip()
+    author = entry.get("a", "Unknown").strip()
     return f'"{content}"\n\n— {author}' if content else "(no quote)"
 
 

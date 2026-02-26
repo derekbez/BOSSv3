@@ -17,7 +17,7 @@ API_URL = "https://serpapi.com/search.json"
 
 def _fetch(api_key: str, geo: str, timeout: float) -> str:
     if not api_key:
-        return "(no SerpApi API key — set BOSS_APP_SERPAPI_API_KEY)"
+        raise RuntimeError("Missing secret: BOSS_APP_SERPAPI_API_KEY")
     data = fetch_json(
         API_URL,
         params={
@@ -46,7 +46,7 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
     refresh = float(cfg.get("refresh_seconds", 3600))
     timeout = float(cfg.get("request_timeout_seconds", 6))
     geo = cfg.get("geo", "GB")
-    api_key = cfg.get("api_key") or api.get_secret("BOSS_APP_SERPAPI_API_KEY")
+    api_key = api.get_secret("BOSS_APP_SERPAPI_API_KEY")
     title = "Trending"
     last_fetch = 0.0
 

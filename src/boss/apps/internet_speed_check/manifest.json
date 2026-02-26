@@ -1,11 +1,11 @@
 {
   "name": "internet_speed_check",
   "display_name": "Internet Speed Check",
-  "description": "Placeholder internet speed test (simulated values).",
-  "version": "0.1.0",
+  "description": "Real internet speed test (download, upload, ping).",
+  "version": "1.0.0",
   "author": "BOSS Team",
   "entry_point": "main.py",
-  "timeout_seconds": 90,
+  "timeout_seconds": 120,
   "requires_network": true,
   "tags": [
     "utility",

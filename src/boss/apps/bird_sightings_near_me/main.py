@@ -45,7 +45,7 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
     per_page = int(cfg.get("per_page", 10))
     refresh = float(cfg.get("refresh_seconds", 120))
     timeout = float(cfg.get("request_timeout_seconds", 6))
-    api_key = cfg.get("api_key") or api.get_secret("BOSS_APP_EBIRD_API_KEY")
+    api_key = api.get_secret("BOSS_APP_EBIRD_API_KEY")
     title = "Nearby Birds"
     last_fetch = 0.0
     cache: list[tuple[str, str]] = []

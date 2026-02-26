@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 def run(stop_event: threading.Event, api: "AppAPI") -> None:
     cfg = api.get_app_config()
-    api_key = cfg.get("api_key") or api.get_secret("BOSS_APP_NEWSDATA_API_KEY")
+    api_key = api.get_secret("BOSS_APP_NEWSDATA_API_KEY")
     country = cfg.get("country", "gb")
     category = cfg.get("category", "technology")
     refresh = float(cfg.get("refresh_seconds", 300))

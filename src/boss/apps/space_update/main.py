@@ -42,15 +42,13 @@ def run(stop_event: threading.Event, api: "AppAPI") -> None:
     cfg = api.get_app_config()
     refresh = float(cfg.get("refresh_seconds", 21600))
     timeout = float(cfg.get("request_timeout_seconds", 6))
-    api_key = cfg.get("api_key") or api.get_secret("BOSS_APP_NASA_API_KEY")
+    api_key = api.get_secret("BOSS_APP_NASA_API_KEY")
     title = "Space"
     last_fetch = 0.0
 
     def _show() -> None:
         if not api_key:
-            api.screen.clear()
-            api.screen.display_text(f"{title}\n\n(no NASA API key set)", align="left")
-            return
+            raise RuntimeError("Missing secret: BOSS_APP_NASA_API_KEY")
         try:
             text = random.choice([_fetch_apod, _fetch_mars])(api_key, timeout)
             api.screen.clear()

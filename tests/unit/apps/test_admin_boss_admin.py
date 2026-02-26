@@ -7,7 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from boss.apps.admin_boss_admin.main import run, _get_local_ip
+from boss.apps.admin_boss_admin.main import run
+from boss.apps._lib.net_utils import get_local_ip
 
 
 class TestAdminBossAdmin:
@@ -40,15 +41,15 @@ class TestAdminBossAdmin:
         assert "9999" in html
 
     def test_get_local_ip_returns_string(self) -> None:
-        """_get_local_ip should return a string."""
-        result = _get_local_ip()
+        """get_local_ip should return a string."""
+        result = get_local_ip()
         assert isinstance(result, str)
 
     def test_get_local_ip_fallback_on_error(self) -> None:
         """If socket fails, should return 'localhost'."""
-        with patch("boss.apps.admin_boss_admin.main.socket.socket") as mock_sock:
+        with patch("boss.apps._lib.net_utils.socket.socket") as mock_sock:
             mock_sock.side_effect = OSError("no network")
-            result = _get_local_ip()
+            result = get_local_ip()
             assert result == "localhost"
 
     def test_run_waits_for_stop_event(self) -> None:
