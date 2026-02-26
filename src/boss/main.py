@@ -7,7 +7,8 @@ handle lifecycle.
 
 from __future__ import annotations
 
-import logging as _logging
+import argparse
+import logging
 from pathlib import Path
 
 from nicegui import app, ui
@@ -16,13 +17,21 @@ from boss.config.config_manager import load_config
 from boss.config.secrets_manager import SecretsManager
 from boss.core.event_bus import EventBus
 from boss.hardware.factory import create_hardware_factory
-from boss.logging.logger import setup_logging
+from boss.log_config.logger import setup_logging
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 def main() -> None:
     """Synchronous entry point — bootstraps and starts NiceGUI."""
+
+    parser = argparse.ArgumentParser(description="BOSS v3 — Raspberry Pi gadget server")
+    parser.add_argument(
+        "--dev",
+        action="store_true",
+        help="Enable Uvicorn auto-reload on file changes (restarts full server)",
+    )
+    args = parser.parse_args()
 
     setup_logging()
     _log.info("Starting BOSS v3")
@@ -37,9 +46,17 @@ def main() -> None:
     # 3. Create hardware factory (mock on dev, GPIO on Pi)
     factory = create_hardware_factory(config)
 
+    # Ensure dev_mode flag tracks mock usage so the UI can adapt
+    # (scrollbars, admin hints, etc.).  This used to live inside
+    # factory.py but mutating a shared config as a side-effect was
+    # a code smell — main.py owns the config lifecycle.
+    from boss.hardware.mock.mock_factory import MockHardwareFactory
+
+    if isinstance(factory, MockHardwareFactory):
+        config.system.dev_mode = True
+
     # 4. Inject NiceGUIScreen into whichever factory was created.
     #    Both MockHardwareFactory and GPIOHardwareFactory support set_screen().
-    from boss.hardware.mock.mock_factory import MockHardwareFactory
     from boss.ui.screen import NiceGUIScreen
 
     nicegui_screen = NiceGUIScreen()
@@ -110,7 +127,7 @@ def main() -> None:
                 if name is None:
                     return None, None
                 m = mgr.get_manifest(name)
-                return name, (m.name if m else name)
+                return name, (m.effective_display_name if m else name)
 
             layout.set_app_resolver(_resolve)
 
@@ -139,7 +156,7 @@ def main() -> None:
     ui.run(
         port=config.system.webui_port,
         title="BOSS v3",
-        reload=False,
+        reload=args.dev,
         show=False,
     )
 

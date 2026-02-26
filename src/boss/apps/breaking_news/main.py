@@ -6,8 +6,8 @@ Yellow = prev page, Green = refresh, Blue = next page.
 from __future__ import annotations
 
 import time
-from threading import Event
-from typing import Any
+import threading
+from typing import TYPE_CHECKING, Any
 
 from boss.apps._lib.http_helpers import fetch_json
 from boss.apps._lib.paginator import TextPaginator, wrap_plain
@@ -36,7 +36,11 @@ def _fetch(api_key: str, country: str, category: str, timeout: float) -> list[st
     return heads
 
 
-def run(stop_event: Event, api: Any) -> None:
+if TYPE_CHECKING:
+    from boss.core.app_api import AppAPI
+
+
+def run(stop_event: threading.Event, api: "AppAPI") -> None:
     cfg = api.get_app_config()
     api_key = cfg.get("api_key") or api.get_secret("BOSS_APP_NEWSDATA_API_KEY")
     country = cfg.get("country", "gb")

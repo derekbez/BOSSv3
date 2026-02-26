@@ -6,7 +6,7 @@
 |-----------|-----------|-----------|-----------|
 | Color buttons (R/Y/G/B) | `ButtonInterface` | gpiozero `Button` | In-memory + `simulate_press()` |
 | Go button | `GoButtonInterface` | gpiozero `Button` | In-memory + `simulate_press()` |
-| Color LEDs (R/Y/G/B) | `LedInterface` | gpiozero `PWMLED` | In-memory state |
+| Color LEDs (R/Y/G/B) | `LedInterface` | gpiozero `LED` | In-memory state |
 | 8-bit switches | `SwitchInterface` | 74HC151 MUX via GPIO | In-memory value |
 | 7-segment display | `DisplayInterface` | TM1637 driver | In-memory value |
 | Screen | `ScreenInterface` | NiceGUI (same as dev) | NiceGUI or in-memory |
@@ -54,7 +54,7 @@ Style is handled by the NiceGUI implementation via `**kwargs` on `display_text()
 
 ## Switch Monitoring
 
-- 10Hz polling in a background thread (GPIO) or event-driven (mock)
+- ~20Hz polling in a background thread (GPIO, 50ms sleep) or event-driven (mock)
 - Switch value is 0–255 (8-bit binary from toggle switches)
 - Value displayed on TM1637 7-segment display (system-controlled, not app-controlled)
 

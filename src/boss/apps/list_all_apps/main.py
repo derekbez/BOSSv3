@@ -5,13 +5,17 @@ Yellow = prev page, Blue = next page.
 
 from __future__ import annotations
 
-from threading import Event
-from typing import Any
+import threading
+from typing import TYPE_CHECKING, Any
 
 from boss.apps._lib.paginator import TextPaginator
 
 
-def run(stop_event: Event, api: Any) -> None:
+if TYPE_CHECKING:
+    from boss.core.app_api import AppAPI
+
+
+def run(stop_event: threading.Event, api: "AppAPI") -> None:
     api.log_info("list_all_apps starting")
     cfg = api.get_app_config()
     per_page = int(cfg.get("entries_per_page", 15))

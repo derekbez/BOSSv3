@@ -1,12 +1,17 @@
 {
-    "name": "app_jokes",
-    "description": "Displays random jokes; Yellow button cycles to next joke.",
-    "version": "1.0.0",
-    "author": "BOSS Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 120,
-    "requires_network": false,
-    "tags": ["novelty"],
-    "timeout_behavior": "return",
-    "config": { "shuffle": true }
+  "name": "app_jokes",
+  "display_name": "Jokes",
+  "description": "Displays random jokes; Yellow button cycles to next joke.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": false,
+  "tags": [
+    "novelty"
+  ],
+  "timeout_behavior": "return",
+  "config": {
+    "shuffle": true
+  }
 }

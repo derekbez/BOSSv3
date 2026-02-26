@@ -1,11 +1,14 @@
 {
-    "name": "hello_world",
-    "description": "API demonstration: LED control, button handling, screen display.",
-    "version": "2.0.0",
-    "author": "BOSS Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 120,
-    "requires_network": false,
-    "tags": ["utility"],
-    "timeout_behavior": "return"
+  "name": "hello_world",
+  "display_name": "Hello World",
+  "description": "API demonstration: LED control, button handling, screen display.",
+  "version": "2.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": false,
+  "tags": [
+    "utility"
+  ],
+  "timeout_behavior": "return"
 }

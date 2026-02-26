@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import logging as _logging
+import logging
 import subprocess
 import sys
 from pathlib import Path
@@ -18,7 +18,7 @@ from boss.core.interfaces.hardware import HardwareFactory
 from boss.core.models.config import BossConfig
 from boss.core.models.event import Event
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 class SystemManager:

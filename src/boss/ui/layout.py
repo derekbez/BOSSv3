@@ -8,7 +8,7 @@ Provides the ``@ui.page('/')`` route with:
 
 from __future__ import annotations
 
-import logging as _logging
+import logging
 from typing import Callable
 
 from nicegui import ui
@@ -19,7 +19,7 @@ from boss.core.models.config import BossConfig
 from boss.core.models.event import Event
 from boss.ui.screen import NiceGUIScreen
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 # Type alias: resolver(switch_value) → (app_dir_name | None, display_name | None)
 AppResolver = Callable[[int], tuple[str | None, str | None]]
@@ -89,11 +89,19 @@ class BossLayout:
         screen_height = self._config.hardware.screen_height
         screen_ratio = screen_width / screen_height
 
-        # Subscribe to status-relevant events
-        self._bus.subscribe(events.SWITCH_CHANGED, self._on_switch_changed)
-        self._bus.subscribe(events.APP_STARTED, self._on_app_started)
-        self._bus.subscribe(events.APP_FINISHED, self._on_app_finished)
-        self._bus.subscribe(events.APP_ERROR, self._on_app_error)
+        # Subscribe to status-relevant events and track IDs for cleanup
+        sub_ids: list[str] = []
+        sub_ids.append(self._bus.subscribe(events.SWITCH_CHANGED, self._on_switch_changed))
+        sub_ids.append(self._bus.subscribe(events.APP_STARTED, self._on_app_started))
+        sub_ids.append(self._bus.subscribe(events.APP_FINISHED, self._on_app_finished))
+        sub_ids.append(self._bus.subscribe(events.APP_ERROR, self._on_app_error))
+
+        # Unsubscribe when this client disconnects (prevents leak on F5)
+        def _cleanup_subs() -> None:
+            for sid in sub_ids:
+                self._bus.unsubscribe(sid)
+
+        ui.context.client.on_disconnect(_cleanup_subs)
 
         # Full-screen dark background.  When running in dev mode we allow
         # the page to scroll so the on‑screen dev panel remains reachable;
@@ -155,6 +163,12 @@ class BossLayout:
             pass  # Content rendered dynamically by NiceGUIScreen
 
         self._screen.bind_container(container)
+
+        # Unbind container when this client disconnects
+        def _unbind() -> None:
+            self._screen.unbind_container(container)
+
+        ui.context.client.on_disconnect(_unbind)
 
     # ------------------------------------------------------------------
     # Status bar helpers

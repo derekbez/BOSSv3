@@ -17,7 +17,11 @@ class AppManifest(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    name: str = Field(description="Human-friendly app name")
+    name: str = Field(description="Machine-readable app identifier (must match directory)")
+    display_name: str | None = Field(
+        default=None,
+        description="Human-readable name shown in the UI (auto-derived from *name* when omitted)",
+    )
     description: str = Field(default="", description="Short description")
     version: str = Field(default="1.0.0")
     author: str = Field(default="")
@@ -38,6 +42,13 @@ class AppManifest(BaseModel):
         default_factory=list,
         description="Env-var / secret keys the app needs (validated at scan time)",
     )
+
+    @property
+    def effective_display_name(self) -> str:
+        """Return *display_name* if set, otherwise title-case the *name* field."""
+        if self.display_name:
+            return self.display_name
+        return self.name.replace("_", " ").title()
 
 
 # ---------------------------------------------------------------------------

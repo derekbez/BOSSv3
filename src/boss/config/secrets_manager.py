@@ -18,9 +18,9 @@ import threading
 from pathlib import Path
 from typing import Any
 
-import logging as _logging
+import logging
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 # Candidate paths, evaluated in order.
 _DEFAULT_PATHS: list[str] = [

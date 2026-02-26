@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import time
-from threading import Event
-from typing import Any
+import threading
+from typing import TYPE_CHECKING, Any
 
 from boss.apps._lib.http_helpers import fetch_json
 
@@ -20,7 +20,11 @@ def _fetch(category: str, joke_type: str, blacklist: list[str], timeout: float) 
     return fetch_json(url, params=params, timeout=timeout)
 
 
-def run(stop_event: Event, api: Any) -> None:
+if TYPE_CHECKING:
+    from boss.core.app_api import AppAPI
+
+
+def run(stop_event: threading.Event, api: "AppAPI") -> None:
     cfg = api.get_app_config()
     category = cfg.get("category", "Any")
     joke_type = cfg.get("type", "single,twopart")

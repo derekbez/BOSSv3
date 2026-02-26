@@ -18,7 +18,7 @@ any objects in this module are instantiated.
 
 from __future__ import annotations
 
-import logging as _logging
+import logging
 import threading
 import time
 from typing import Callable
@@ -34,7 +34,7 @@ from boss.core.interfaces.hardware import (
 from boss.core.models.config import HardwareConfig
 from boss.core.models.state import ButtonColor, LedColor
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Lazy imports — patched by unit tests on non-Pi platforms.

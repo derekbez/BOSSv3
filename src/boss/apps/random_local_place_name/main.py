@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import json
 import random
-from threading import Event
-from typing import Any
+import threading
+from typing import TYPE_CHECKING, Any
 
 
-def run(stop_event: Event, api: Any) -> None:
+if TYPE_CHECKING:
+    from boss.core.app_api import AppAPI
+
+
+def run(stop_event: threading.Event, api: "AppAPI") -> None:
     # Load places
     places: list[str] = []
     try:

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import time
-from threading import Event
-from typing import Any
+import threading
+from typing import TYPE_CHECKING, Any
 
 from boss.apps._lib.http_helpers import fetch_json
 
@@ -36,7 +36,11 @@ def _fetch(api_key: str, airline_iata: str, timeout: float) -> str:
     return "\n".join(lines)
 
 
-def run(stop_event: Event, api: Any) -> None:
+if TYPE_CHECKING:
+    from boss.core.app_api import AppAPI
+
+
+def run(stop_event: threading.Event, api: "AppAPI") -> None:
     cfg = api.get_app_config()
     iata = cfg.get("iata", "BA")
     refresh = float(cfg.get("refresh_seconds", 600))

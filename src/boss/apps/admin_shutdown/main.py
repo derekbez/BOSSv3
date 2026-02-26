@@ -5,11 +5,15 @@ Yellow = Reboot, Blue = Poweroff, Green = Exit to OS.
 
 from __future__ import annotations
 
-from threading import Event
-from typing import Any
+import threading
+from typing import TYPE_CHECKING, Any
 
 
-def run(stop_event: Event, api: Any) -> None:
+if TYPE_CHECKING:
+    from boss.core.app_api import AppAPI
+
+
+def run(stop_event: threading.Event, api: "AppAPI") -> None:
     prompt = (
         "Shutdown Menu:\n\n"
         "  [YELLOW] Reboot\n"
@@ -30,7 +34,8 @@ def run(stop_event: Event, api: Any) -> None:
             api.screen.display_text("Rebooting system…", font_size=16, align="center")
             api.log_info("admin_shutdown: reboot triggered")
             api.event_bus.publish_threadsafe(
-                "system.shutdown.requested", {"reason": "reboot"},
+                "system.shutdown.requested",
+                {"action": "reboot", "reason": "reboot"},
             )
             stop_event.set()
         elif button == "blue":
@@ -38,7 +43,8 @@ def run(stop_event: Event, api: Any) -> None:
             api.screen.display_text("Shutting down system…", font_size=16, align="center")
             api.log_info("admin_shutdown: poweroff triggered")
             api.event_bus.publish_threadsafe(
-                "system.shutdown.requested", {"reason": "poweroff"},
+                "system.shutdown.requested",
+                {"action": "shutdown", "reason": "poweroff"},
             )
             stop_event.set()
         elif button == "green":
@@ -46,7 +52,8 @@ def run(stop_event: Event, api: Any) -> None:
             api.screen.display_text("Exiting to OS shell…", font_size=16, align="center")
             api.log_info("admin_shutdown: exit-to-os triggered")
             api.event_bus.publish_threadsafe(
-                "system.shutdown.requested", {"reason": "exit_to_os"},
+                "system.shutdown.requested",
+                {"action": "exit", "reason": "exit_to_os"},
             )
             stop_event.set()
 

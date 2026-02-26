@@ -1,12 +1,20 @@
 {
-    "name": "on_this_day",
-    "description": "Historical events for today (byabbe.se).",
-    "version": "1.0.0",
-    "author": "BOSS Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 900,
-    "requires_network": true,
-    "tags": ["content", "network"],
-    "timeout_behavior": "return",
-    "config": { "request_timeout_seconds": 6, "refresh_seconds": 43200, "wrap_width": 100 }
+  "name": "on_this_day",
+  "display_name": "On This Day",
+  "description": "Historical events for today (byabbe.se).",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 900,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "config": {
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 43200,
+    "wrap_width": 100
+  }
 }

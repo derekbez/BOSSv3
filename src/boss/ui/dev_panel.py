@@ -10,7 +10,7 @@ Only rendered when the hardware factory is :class:`MockHardwareFactory`.
 
 from __future__ import annotations
 
-import logging as _logging
+import logging
 from typing import Any
 
 from nicegui import ui
@@ -21,7 +21,7 @@ from boss.core.models.event import Event
 from boss.core.models.state import ButtonColor, LedColor
 from boss.hardware.mock.mock_factory import MockHardwareFactory
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 # LED colour hex values for glow effect
 _LED_COLORS: dict[str, str] = {
@@ -87,10 +87,18 @@ class DevPanel:
                 # Right: 4 buttons each with adjacent LED
                 self._build_right_buttons_and_leds()
 
-        # Subscribe to output events for live updates
-        self._bus.subscribe(events.LED_STATE_CHANGED, self._on_led_changed)
-        self._bus.subscribe(events.DISPLAY_UPDATED, self._on_display_updated)
-        self._bus.subscribe(events.SWITCH_CHANGED, self._on_switch_changed)
+        # Subscribe to output events for live updates (track IDs for cleanup)
+        sub_ids: list[str] = []
+        sub_ids.append(self._bus.subscribe(events.LED_STATE_CHANGED, self._on_led_changed))
+        sub_ids.append(self._bus.subscribe(events.DISPLAY_UPDATED, self._on_display_updated))
+        sub_ids.append(self._bus.subscribe(events.SWITCH_CHANGED, self._on_switch_changed))
+
+        # Unsubscribe when this client disconnects (prevents leak on F5)
+        def _cleanup_subs() -> None:
+            for sid in sub_ids:
+                self._bus.unsubscribe(sid)
+
+        ui.context.client.on_disconnect(_cleanup_subs)
 
         # Set up keyboard shortcuts
         self._build_keyboard_handler()

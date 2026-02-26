@@ -7,13 +7,17 @@ dashboard on screen.  Press RED to exit.
 from __future__ import annotations
 
 import time
-from threading import Event
-from typing import Any
+import threading
+from typing import TYPE_CHECKING, Any
 
 LED_COLORS = ["red", "yellow", "green", "blue"]
 
 
-def run(stop_event: Event, api: Any) -> None:
+if TYPE_CHECKING:
+    from boss.core.app_api import AppAPI
+
+
+def run(stop_event: threading.Event, api: "AppAPI") -> None:
     api.log_info("hello_world starting")
     counts: dict[str, int] = {c: 0 for c in LED_COLORS}
     sub_ids: list[str] = []

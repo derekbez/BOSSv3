@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import logging as _logging
+import logging
 
 from boss.config.secrets_manager import SecretsManager
 from boss.core import events
@@ -20,7 +20,7 @@ from boss.core.models.config import BossConfig
 from boss.core.models.event import Event
 from boss.core.models.state import LedColor
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 class AppLauncher:
@@ -93,7 +93,7 @@ class AppLauncher:
             self._runner.stop()
 
         # Transition feedback
-        self._transition_feedback(app_name, switch_value)
+        self._transition_feedback(manifest.effective_display_name, switch_value)
 
         # Build app summary list for list_all_apps
         app_summaries = self._build_app_summaries()
@@ -159,15 +159,11 @@ class AppLauncher:
         """Return sorted list of {switch, name, description} for all mapped apps."""
         result: list[dict] = []
         all_manifests = self._app_manager.get_all_manifests()
-        for sw_val, app_name in sorted(
-            (
-                (sw, name)
-                for sw, name in self._app_manager._switch_map.items()
-            )
-        ):
+        for sw_val, app_name in sorted(self._app_manager.get_switch_map().items()):
             m = all_manifests.get(app_name)
             if m:
                 result.append(
-                    {"switch": sw_val, "name": m.name, "description": m.description}
+                    {"switch": sw_val, "name": m.effective_display_name, "description": m.description}
                 )
+        return result
         return result

@@ -9,7 +9,7 @@ The NiceGUI screen is injected from :func:`boss.main.main` via
 
 from __future__ import annotations
 
-import logging as _logging
+import logging
 
 from boss.core.interfaces.hardware import (
     ButtonInterface,
@@ -31,7 +31,7 @@ from boss.hardware.gpio.gpio_hardware import (
     GPIOSwitches,
 )
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 def _setup_pin_factory() -> None:

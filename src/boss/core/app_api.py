@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import logging as _logging
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +13,7 @@ from boss.core.interfaces.hardware import LedInterface, ScreenInterface
 from boss.core.models.config import BossConfig
 from boss.core.models.manifest import AppManifest
 from boss.core.models.state import LedColor
-from boss.logging.logger import ContextualLogger
+from boss.log_config.logger import ContextualLogger
 
 
 class _ScopedEventBus:
@@ -109,7 +109,7 @@ class AppAPI:
 
         # Logger
         self._logger = ContextualLogger(
-            _logging.getLogger(f"boss.apps.{app_name}"),
+            logging.getLogger(f"boss.apps.{app_name}"),
             app=app_name,
         )
 

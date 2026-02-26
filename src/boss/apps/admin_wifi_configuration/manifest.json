@@ -1,14 +1,18 @@
 {
-    "name": "admin_wifi_configuration",
-    "description": "View and manage WiFi connections (Pi only).",
-    "version": "3.0.0",
-    "author": "Derek Bez",
-    "entry_point": "main.py",
-    "timeout_seconds": 300,
-    "timeout_behavior": "return",
-    "requires_network": false,
-    "requires_audio": false,
-    "tags": ["admin", "system"],
-    "required_env": [],
-    "config": {}
+  "name": "admin_wifi_configuration",
+  "display_name": "Wi-Fi Configuration",
+  "description": "View and manage WiFi connections (Pi only).",
+  "version": "3.0.0",
+  "author": "Derek Bez",
+  "entry_point": "main.py",
+  "timeout_seconds": 300,
+  "timeout_behavior": "return",
+  "requires_network": false,
+  "requires_audio": false,
+  "tags": [
+    "admin",
+    "system"
+  ],
+  "required_env": [],
+  "config": {}
 }

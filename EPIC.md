@@ -67,7 +67,7 @@
   - `get_global_location()` resolution; `get_app_path()`, `get_asset_path()`
   - Scoped event bus auto-unsubscribes on cleanup
 - [x] **1.14** Logging: `setup_logging()`, `ContextualLogger`, rotating file handler
-  - File: `logging/logger.py` — avoids stdlib `logging` shadow with `import logging as _logging`
+  - File: `log_config/logger.py` — no longer shadows stdlib `logging`
   - RotatingFileHandler: 5 MB max, 3 backups
 - [x] **1.15** Unit tests for all Phase 1 modules (60 tests)
   - `test_config_models.py`, `test_manifest.py`, `test_event_bus.py`

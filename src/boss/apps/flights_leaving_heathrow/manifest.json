@@ -1,13 +1,22 @@
 {
-    "name": "flights_leaving_heathrow",
-    "description": "Upcoming departures from Heathrow (Aviationstack).",
-    "version": "1.0.0",
-    "author": "BOSS Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 180,
-    "requires_network": true,
-    "tags": ["content", "network"],
-    "timeout_behavior": "return",
-    "required_env": ["BOSS_APP_AVIATIONSTACK_API_KEY"],
-    "config": { "request_timeout_seconds": 6, "refresh_seconds": 600 }
+  "name": "flights_leaving_heathrow",
+  "display_name": "Flights Leaving Heathrow",
+  "description": "Upcoming departures from Heathrow (Aviationstack).",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 180,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [
+    "BOSS_APP_AVIATIONSTACK_API_KEY"
+  ],
+  "config": {
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 600
+  }
 }

@@ -6,8 +6,8 @@ Yellow = prev, Green = refresh, Blue = next.  Requires global location.
 from __future__ import annotations
 
 import time
-from threading import Event
-from typing import Any
+import threading
+from typing import TYPE_CHECKING, Any
 
 from boss.apps._lib.http_helpers import fetch_json
 from boss.apps._lib.paginator import TextPaginator, wrap_plain
@@ -33,7 +33,11 @@ def _fetch(lat: float, lon: float, radius: int, api_key: str, timeout: float) ->
     return sightings
 
 
-def run(stop_event: Event, api: Any) -> None:
+if TYPE_CHECKING:
+    from boss.core.app_api import AppAPI
+
+
+def run(stop_event: threading.Event, api: "AppAPI") -> None:
     cfg = api.get_app_config()
     loc = api.get_global_location()
     lat, lon = loc["lat"], loc["lon"]

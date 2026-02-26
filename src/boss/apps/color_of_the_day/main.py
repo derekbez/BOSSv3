@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import time
 import xml.etree.ElementTree as ET
-from threading import Event
-from typing import Any
+import threading
+from typing import TYPE_CHECKING, Any
 
 from boss.apps._lib.http_helpers import fetch_text
 
@@ -23,7 +23,11 @@ def _fetch(timeout: float) -> tuple[str, str]:
     return title, hexcode
 
 
-def run(stop_event: Event, api: Any) -> None:
+if TYPE_CHECKING:
+    from boss.core.app_api import AppAPI
+
+
+def run(stop_event: threading.Event, api: "AppAPI") -> None:
     cfg = api.get_app_config()
     refresh = float(cfg.get("refresh_seconds", 86400))
     timeout = float(cfg.get("request_timeout_seconds", 6))

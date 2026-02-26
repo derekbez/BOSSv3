@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
-from threading import Event
-from typing import Any
+import threading
+from typing import TYPE_CHECKING
 
 LED_COLORS = ["red", "yellow", "green", "blue"]
 
 
-def run(stop_event: Event, api: Any) -> None:
+if TYPE_CHECKING:
+    from boss.core.app_api import AppAPI
+
+
+def run(stop_event: threading.Event, api: "AppAPI") -> None:
     api.log_info("admin_startup: initializing")
 
     def _set_all(on: bool) -> None:

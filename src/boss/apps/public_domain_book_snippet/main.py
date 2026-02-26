@@ -5,8 +5,8 @@ from __future__ import annotations
 import random
 import time
 from pathlib import Path
-from threading import Event
-from typing import Any
+import threading
+from typing import TYPE_CHECKING, Any
 
 
 def _load_texts(assets_dir: Path) -> list[str]:
@@ -26,7 +26,11 @@ def _load_texts(assets_dir: Path) -> list[str]:
     return lines
 
 
-def run(stop_event: Event, api: Any) -> None:
+if TYPE_CHECKING:
+    from boss.core.app_api import AppAPI
+
+
+def run(stop_event: threading.Event, api: "AppAPI") -> None:
     cfg = api.get_app_config()
     n_lines = int(cfg.get("lines", 5))
     shuffle_sec = float(cfg.get("shuffle_seconds", 600))

@@ -11,7 +11,7 @@ Provides:
 
 from __future__ import annotations
 
-import logging as _logging
+import logging
 import platform
 import shutil
 import subprocess
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from boss.core.event_bus import EventBus
     from boss.core.models.config import BossConfig
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 _BOOT_TIME = time.time()
 

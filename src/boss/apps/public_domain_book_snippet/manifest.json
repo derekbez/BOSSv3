@@ -1,12 +1,18 @@
 {
-    "name": "public_domain_book_snippet",
-    "description": "Random snippet from local public domain texts.",
-    "version": "1.0.0",
-    "author": "BOSS Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 120,
-    "requires_network": false,
-    "tags": ["content"],
-    "timeout_behavior": "return",
-    "config": { "lines": 5, "shuffle_seconds": 600 }
+  "name": "public_domain_book_snippet",
+  "display_name": "Book Snippet",
+  "description": "Random snippet from local public domain texts.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": false,
+  "tags": [
+    "content"
+  ],
+  "timeout_behavior": "return",
+  "config": {
+    "lines": 5,
+    "shuffle_seconds": 600
+  }
 }

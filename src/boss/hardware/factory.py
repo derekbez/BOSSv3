@@ -5,12 +5,12 @@ Selects GPIO on Raspberry Pi, Mock on everything else (Windows, Mac, CI).
 
 from __future__ import annotations
 
-import logging as _logging
+import logging
 
 from boss.core.interfaces.hardware import HardwareFactory
 from boss.core.models.config import BossConfig
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 def _is_raspberry_pi() -> bool:
@@ -33,9 +33,6 @@ def create_hardware_factory(config: BossConfig) -> HardwareFactory:
     if config.system.dev_mode or not _is_raspberry_pi():
         from boss.hardware.mock.mock_factory import MockHardwareFactory
 
-        # Ensure dev_mode flag tracks mock usage so UI can adapt (scrollbars,
-        # admin hints, etc.).  Users can also set BOSS_DEV_MODE explicitly.
-        config.system.dev_mode = True
         _log.info("Using MockHardwareFactory (dev_mode=%s, is_pi=%s)",
                    config.system.dev_mode, _is_raspberry_pi())
         return MockHardwareFactory()

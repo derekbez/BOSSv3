@@ -1,13 +1,22 @@
 {
-    "name": "word_of_the_day",
-    "description": "Wordnik word of the day (requires API key).",
-    "version": "1.0.0",
-    "author": "BOSS Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 120,
-    "requires_network": true,
-    "tags": ["content", "network"],
-    "timeout_behavior": "return",
-    "required_env": ["BOSS_APP_WORDNIK_API_KEY"],
-    "config": { "request_timeout_seconds": 6, "refresh_seconds": 43200 }
+  "name": "word_of_the_day",
+  "display_name": "Word of the Day",
+  "description": "Wordnik word of the day (requires API key).",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [
+    "BOSS_APP_WORDNIK_API_KEY"
+  ],
+  "config": {
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 43200
+  }
 }

@@ -1,12 +1,19 @@
 {
-    "name": "color_of_the_day",
-    "description": "Random colour from ColourLovers API.",
-    "version": "1.0.0",
-    "author": "BOSS Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 90,
-    "requires_network": true,
-    "tags": ["content", "network"],
-    "timeout_behavior": "return",
-    "config": { "request_timeout_seconds": 6, "refresh_seconds": 86400 }
+  "name": "color_of_the_day",
+  "display_name": "Colour of the Day",
+  "description": "Random colour from ColourLovers API.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 90,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "config": {
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 86400
+  }
 }

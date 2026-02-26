@@ -14,14 +14,14 @@ Key behaviours:
 from __future__ import annotations
 
 import asyncio
-import logging as _logging
+import logging
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from boss.core.models.event import Event
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 @dataclass

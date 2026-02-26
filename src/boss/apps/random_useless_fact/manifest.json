@@ -1,12 +1,19 @@
 {
-    "name": "random_useless_fact",
-    "description": "Displays a random useless fact with refresh button.",
-    "version": "1.0.0",
-    "author": "BOSS Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 120,
-    "requires_network": true,
-    "tags": ["novelty", "network"],
-    "timeout_behavior": "return",
-    "config": { "refresh_seconds": 45, "request_timeout_seconds": 6 }
+  "name": "random_useless_fact",
+  "display_name": "Random Useless Fact",
+  "description": "Displays a random useless fact with refresh button.",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": true,
+  "tags": [
+    "novelty",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "config": {
+    "refresh_seconds": 45,
+    "request_timeout_seconds": 6
+  }
 }

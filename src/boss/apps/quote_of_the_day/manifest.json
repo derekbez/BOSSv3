@@ -1,12 +1,19 @@
 {
-    "name": "quote_of_the_day",
-    "description": "Fetch and display a random quote (Quotable API).",
-    "version": "1.0.0",
-    "author": "BOSS Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 120,
-    "requires_network": true,
-    "tags": ["content", "network"],
-    "timeout_behavior": "return",
-    "config": { "request_timeout_seconds": 6, "refresh_seconds": 300 }
+  "name": "quote_of_the_day",
+  "display_name": "Quote of the Day",
+  "description": "Fetch and display a random quote (Quotable API).",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 120,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "config": {
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 300
+  }
 }

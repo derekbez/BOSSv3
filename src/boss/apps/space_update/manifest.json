@@ -1,13 +1,22 @@
 {
-    "name": "space_update",
-    "description": "Random space content (NASA APIs).",
-    "version": "1.0.1",
-    "author": "BOSS Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 150,
-    "requires_network": true,
-    "tags": ["content", "network"],
-    "timeout_behavior": "return",
-    "required_env": ["BOSS_APP_NASA_API_KEY"],
-    "config": { "request_timeout_seconds": 6, "refresh_seconds": 21600 }
+  "name": "space_update",
+  "display_name": "Space Update",
+  "description": "Random space content (NASA APIs).",
+  "version": "1.0.1",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 150,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [
+    "BOSS_APP_NASA_API_KEY"
+  ],
+  "config": {
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 21600
+  }
 }

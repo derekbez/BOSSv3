@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
-from threading import Event
-from typing import Any
+import threading
+from typing import TYPE_CHECKING
 
 
-def run(stop_event: Event, api: Any) -> None:
+if TYPE_CHECKING:
+    from boss.core.app_api import AppAPI
+
+
+def run(stop_event: threading.Event, api: "AppAPI") -> None:
     cfg = api.get_app_config()
     message = cfg.get("message", "Orion visible tonight! (placeholder)")
     api.screen.clear()

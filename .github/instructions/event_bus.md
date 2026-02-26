@@ -60,7 +60,7 @@ repeated failures from blocking the event pipeline.
 ### Setup
 
 ```python
-from boss.logging import setup_logging, get_logger
+from boss.log_config import setup_logging, get_logger
 
 setup_logging(log_level="INFO", log_dir="logs/")
 logger = get_logger(__name__)

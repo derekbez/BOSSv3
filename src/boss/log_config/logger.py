@@ -1,13 +1,8 @@
-"""Logging setup, contextual logger, and rotating file handler.
-
-NOTE: This module lives under ``boss.logging`` which shadows the stdlib
-``logging`` package.  All internal references therefore import the stdlib
-via ``import logging as _logging`` to avoid circular-import issues.
-"""
+"""Logging setup, contextual logger, and rotating file handler."""
 
 from __future__ import annotations
 
-import logging as _logging
+import logging
 import os
 from logging.handlers import RotatingFileHandler
 from typing import Any
@@ -39,9 +34,9 @@ def setup_logging(
         max_bytes: Max size per log file before rotation.
         backup_count: Number of rotated backup files to keep.
     """
-    level = getattr(_logging, log_level.upper(), _logging.INFO)
+    level = getattr(logging, log_level.upper(), logging.INFO)
 
-    root = _logging.getLogger()
+    root = logging.getLogger()
     root.setLevel(level)
 
     # Remove any previously-installed handlers (idempotent re-init).
@@ -49,10 +44,10 @@ def setup_logging(
         root.removeHandler(handler)
         handler.close()
 
-    formatter = _logging.Formatter(_LOG_FORMAT, datefmt=_DATE_FORMAT)
+    formatter = logging.Formatter(_LOG_FORMAT, datefmt=_DATE_FORMAT)
 
     # Console handler
-    console = _logging.StreamHandler()
+    console = logging.StreamHandler()
     console.setLevel(level)
     console.setFormatter(formatter)
     root.addHandler(console)
@@ -74,9 +69,9 @@ def setup_logging(
 # ---------------------------------------------------------------------------
 # get_logger
 # ---------------------------------------------------------------------------
-def get_logger(name: str) -> _logging.Logger:
+def get_logger(name: str) -> logging.Logger:
     """Return a stdlib Logger for *name* (typically ``__name__``)."""
-    return _logging.getLogger(name)
+    return logging.getLogger(name)
 
 
 # ---------------------------------------------------------------------------
@@ -91,7 +86,7 @@ class ContextualLogger:
         log.info("Fetching data")  # => "[app=weather switch=42] Fetching data"
     """
 
-    def __init__(self, logger: _logging.Logger, **context: Any) -> None:
+    def __init__(self, logger: logging.Logger, **context: Any) -> None:
         self._logger = logger
         self._prefix = " ".join(f"[{k}={v}]" for k, v in context.items())
 

@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import json
-import logging as _logging
+import logging
 from pathlib import Path
 from typing import Any
 
 from boss.config.secrets_manager import SecretsManager
 from boss.core.models.manifest import AppManifest, migrate_manifest_v2
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 class AppManager:
@@ -68,6 +68,10 @@ class AppManager:
     def get_all_manifests(self) -> dict[str, AppManifest]:
         """Return a copy of all discovered manifests."""
         return dict(self._manifests)
+
+    def get_switch_map(self) -> dict[int, str]:
+        """Return a copy of the switch-value → app-name mapping."""
+        return dict(self._switch_map)
 
     def get_app_dir(self, app_name: str) -> Path | None:
         """Return the directory for *app_name*, or ``None``."""

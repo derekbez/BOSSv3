@@ -1,13 +1,23 @@
 {
-    "name": "top_trending_search",
-    "description": "Top trending Google search terms (SerpApi).",
-    "version": "2.0.0",
-    "author": "BOSS Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 90,
-    "requires_network": true,
-    "tags": ["content", "network"],
-    "timeout_behavior": "return",
-    "required_env": ["BOSS_APP_SERPAPI_API_KEY"],
-    "config": { "geo": "GB", "request_timeout_seconds": 6, "refresh_seconds": 3600 }
+  "name": "top_trending_search",
+  "display_name": "Top Trending Search",
+  "description": "Top trending Google search terms (SerpApi).",
+  "version": "2.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 90,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [
+    "BOSS_APP_SERPAPI_API_KEY"
+  ],
+  "config": {
+    "geo": "GB",
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 3600
+  }
 }

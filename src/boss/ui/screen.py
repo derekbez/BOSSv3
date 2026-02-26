@@ -11,14 +11,14 @@ page setup by calling :meth:`bind_container`.
 from __future__ import annotations
 
 import asyncio
-import logging as _logging
+import logging
 from typing import Any
 
 from nicegui import ui
 
 from boss.core.interfaces.hardware import ScreenInterface
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 # Default style for the screen canvas area
 _SCREEN_STYLE = (
@@ -29,10 +29,13 @@ _SCREEN_STYLE = (
 
 
 class NiceGUIScreen(ScreenInterface):
-    """Renders mini-app output into a NiceGUI container.
+    """Renders mini-app output into NiceGUI container(s).
 
     Thread-safety is achieved by marshalling every render call to the
     asyncio event loop via :func:`asyncio.run_coroutine_threadsafe`.
+
+    Supports multiple connected clients — each calls :meth:`bind_container`
+    and all bound containers are updated in parallel.
 
     Typical lifecycle::
 
@@ -44,18 +47,24 @@ class NiceGUIScreen(ScreenInterface):
     """
 
     def __init__(self) -> None:
-        self._container: ui.element | None = None
+        self._containers: set[ui.element] = set()
         self._loop: asyncio.AbstractEventLoop | None = None
 
     def bind_container(self, container: ui.element) -> None:
-        """Bind to a NiceGUI container element and capture the event loop.
+        """Bind a NiceGUI container element and capture the event loop.
 
         Must be called from the NiceGUI event-loop context (e.g. inside
-        ``@ui.page`` or ``app.on_startup``).
+        ``@ui.page`` or ``app.on_startup``).  Multiple containers can
+        be bound (one per connected client).
         """
-        self._container = container
+        self._containers.add(container)
         self._loop = asyncio.get_event_loop()
-        _log.debug("NiceGUIScreen bound to container %s", container)
+        _log.debug("NiceGUIScreen bound container (total=%d)", len(self._containers))
+
+    def unbind_container(self, container: ui.element) -> None:
+        """Remove a container binding (call on client disconnect)."""
+        self._containers.discard(container)
+        _log.debug("NiceGUIScreen unbound container (total=%d)", len(self._containers))
 
     # ------------------------------------------------------------------
     # ScreenInterface implementation
@@ -81,46 +90,56 @@ class NiceGUIScreen(ScreenInterface):
     # ------------------------------------------------------------------
 
     async def _render_text(self, text: str, **kwargs: Any) -> None:
-        if self._container is None:
-            return
-        self._container.clear()
-        with self._container:
-            font_size = kwargs.get("font_size", 24)
-            color = kwargs.get("color", "white")
-            bg = kwargs.get("background", "")
-            align = kwargs.get("align", "center")
+        for container in list(self._containers):
+            try:
+                container.clear()
+                with container:
+                    font_size = kwargs.get("font_size", 24)
+                    color = kwargs.get("color", "white")
+                    bg = kwargs.get("background", "")
+                    align = kwargs.get("align", "center")
 
-            style = f"font-size: {font_size}px; color: {color}; white-space: pre-wrap; "
-            style += f"text-align: {align}; width: 100%; "
-            if bg:
-                style += f"background: {bg}; "
-            ui.html(f'<div style="{style}">{_escape_html(text)}</div>')
+                    style = f"font-size: {font_size}px; color: {color}; white-space: pre-wrap; "
+                    style += f"text-align: {align}; width: 100%; "
+                    if bg:
+                        style += f"background: {bg}; "
+                    ui.html(f'<div style="{style}">{_escape_html(text)}</div>')
+            except RuntimeError:
+                self._containers.discard(container)
 
     async def _render_html(self, html: str) -> None:
-        if self._container is None:
-            return
-        self._container.clear()
-        with self._container:
-            ui.html(html)
+        for container in list(self._containers):
+            try:
+                container.clear()
+                with container:
+                    ui.html(html)
+            except RuntimeError:
+                self._containers.discard(container)
 
     async def _render_image(self, image_path: str) -> None:
-        if self._container is None:
-            return
-        self._container.clear()
-        with self._container:
-            ui.image(image_path).style("max-width: 100%; max-height: 100%;")
+        for container in list(self._containers):
+            try:
+                container.clear()
+                with container:
+                    ui.image(image_path).style("max-width: 100%; max-height: 100%;")
+            except RuntimeError:
+                self._containers.discard(container)
 
     async def _render_markdown(self, markdown: str) -> None:
-        if self._container is None:
-            return
-        self._container.clear()
-        with self._container:
-            ui.markdown(markdown)
+        for container in list(self._containers):
+            try:
+                container.clear()
+                with container:
+                    ui.markdown(markdown)
+            except RuntimeError:
+                self._containers.discard(container)
 
     async def _render_clear(self) -> None:
-        if self._container is None:
-            return
-        self._container.clear()
+        for container in list(self._containers):
+            try:
+                container.clear()
+            except RuntimeError:
+                self._containers.discard(container)
 
     # ------------------------------------------------------------------
     # Thread-safety helper
@@ -133,8 +152,8 @@ class NiceGUIScreen(ScreenInterface):
         If called from another thread (e.g. app daemon thread),
         uses ``run_coroutine_threadsafe``.
         """
-        if self._loop is None:
-            _log.warning("NiceGUIScreen: no loop bound — call bind_container() first")
+        if self._loop is None or not self._containers:
+            _log.warning("NiceGUIScreen: no loop/containers — call bind_container() first")
             return
 
         try:

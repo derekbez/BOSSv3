@@ -1,13 +1,23 @@
 {
-    "name": "flight_status_favorite_airline",
-    "description": "Status of flights for a favourite airline (Aviationstack).",
-    "version": "1.0.0",
-    "author": "BOSS Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 150,
-    "requires_network": true,
-    "tags": ["content", "network"],
-    "timeout_behavior": "return",
-    "required_env": ["BOSS_APP_AVIATIONSTACK_API_KEY"],
-    "config": { "iata": "BA", "request_timeout_seconds": 6, "refresh_seconds": 600 }
+  "name": "flight_status_favorite_airline",
+  "display_name": "Flight Status: Favourite Airline",
+  "description": "Status of flights for a favourite airline (Aviationstack).",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 150,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "required_env": [
+    "BOSS_APP_AVIATIONSTACK_API_KEY"
+  ],
+  "config": {
+    "iata": "BA",
+    "request_timeout_seconds": 6,
+    "refresh_seconds": 600
+  }
 }

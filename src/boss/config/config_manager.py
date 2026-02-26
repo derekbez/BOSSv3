@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import json
-import logging as _logging
+import logging
 import os
 from pathlib import Path
 
 from boss.core.models.config import BossConfig
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 # Default config file, relative to the project root (where pyproject.toml lives).
 _DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "boss_config.json"

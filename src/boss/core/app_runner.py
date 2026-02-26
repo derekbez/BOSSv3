@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
-import logging as _logging
+import logging
+import sys
 import threading
 from pathlib import Path
 from typing import Any
@@ -13,7 +14,7 @@ from boss.core.event_bus import EventBus
 from boss.core import events
 from boss.core.models.manifest import AppManifest
 
-_log = _logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 class AppRunner:
@@ -31,6 +32,7 @@ class AppRunner:
         self._thread: threading.Thread | None = None
         self._stop_event = threading.Event()
         self._app_name: str | None = None
+        self._timer: threading.Timer | None = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -50,10 +52,27 @@ class AppRunner:
         """Launch *app_name* in a daemon thread.
 
         If an app is already running, it is stopped first (cooperative).
+        Blocks until the old app has exited (or the join timeout expires)
+        to guarantee sequential execution.
         """
         if self.is_running:
             _log.warning("Stopping current app %s before launching %s", self._app_name, app_name)
             self.stop()
+
+            # Double-check: if the old thread is still alive after stop(),
+            # wait a little longer.  This prevents two app threads from
+            # overlapping.
+            if self._thread is not None and self._thread.is_alive():
+                _log.warning(
+                    "Old app thread still alive after stop() — waiting 2s more"
+                )
+                self._thread.join(timeout=2.0)
+                if self._thread.is_alive():
+                    _log.error(
+                        "App %s refused to stop — launching %s anyway (old thread is daemon)",
+                        self._app_name,
+                        app_name,
+                    )
 
         self._app_name = app_name
         self._stop_event = threading.Event()
@@ -68,16 +87,17 @@ class AppRunner:
 
         # Start timeout monitor
         timeout = manifest.timeout_seconds
-        timer = threading.Timer(timeout, self._on_timeout, args=(app_name,))
-        timer.daemon = True
-        timer.name = f"timeout-{app_name}"
-        timer.start()
+        self._timer = threading.Timer(timeout, self._on_timeout, args=(app_name,))
+        self._timer.daemon = True
+        self._timer.name = f"timeout-{app_name}"
+        self._timer.start()
 
     def stop(self, timeout: float = 5.0) -> None:
         """Cooperatively stop the running app."""
         if not self.is_running:
             return
         _log.info("Requesting stop for app %s", self._app_name)
+        self._cancel_timer()
         self._stop_event.set()
         if self._thread is not None:
             self._thread.join(timeout=timeout)
@@ -101,7 +121,7 @@ class AppRunner:
             events.APP_STARTED,
             {
                 "app_name": app_name,
-                "display_name": manifest.name,
+                "display_name": manifest.effective_display_name,
                 "switch_value": 0,
             },
         )
@@ -121,6 +141,7 @@ class AppRunner:
                 {"app_name": app_name, "error": str(exc)},
             )
         finally:
+            self._cancel_timer()
             api._cleanup()
 
     def _on_timeout(self, app_name: str) -> None:
@@ -128,9 +149,28 @@ class AppRunner:
             _log.warning("App %s hit timeout — setting stop_event", app_name)
             self._stop_event.set()
 
+    def _cancel_timer(self) -> None:
+        """Cancel the running timeout timer, if any."""
+        if self._timer is not None:
+            self._timer.cancel()
+            self._timer = None
+
     @staticmethod
     def _load_run_func(entry_path: Path) -> Any:
-        """Dynamically import the app module and return its ``run`` function."""
+        """Dynamically import the app module and return its ``run`` function.
+
+        Before loading, any previously cached ``boss.apps.*`` modules are
+        evicted from ``sys.modules`` so that helper libraries (e.g.
+        ``boss.apps._lib``) are also re-read from disk.  This means
+        developers can edit app code **and** shared helpers and see
+        changes take effect on the next Go-button press — no server
+        restart required.
+        """
+        # Evict cached app/helper modules so edits are picked up.
+        stale = [k for k in sys.modules if k.startswith("boss.apps.")]
+        for key in stale:
+            del sys.modules[key]
+
         spec = importlib.util.spec_from_file_location("_boss_app_module", entry_path)
         if spec is None or spec.loader is None:
             raise ImportError(f"Cannot load app module: {entry_path}")

@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import time
 from datetime import date
-from threading import Event
-from typing import Any
+import threading
+from typing import TYPE_CHECKING, Any
 
 from boss.apps._lib.http_helpers import fetch_json
 from boss.apps._lib.paginator import TextPaginator, wrap_events
@@ -32,7 +32,11 @@ def _fetch(timeout: float) -> list[tuple[str, str]]:
     return events
 
 
-def run(stop_event: Event, api: Any) -> None:
+if TYPE_CHECKING:
+    from boss.core.app_api import AppAPI
+
+
+def run(stop_event: threading.Event, api: "AppAPI") -> None:
     cfg = api.get_app_config()
     refresh = float(cfg.get("refresh_seconds", 43200))
     timeout = float(cfg.get("request_timeout_seconds", 6))

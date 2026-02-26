@@ -5,16 +5,16 @@
 ```json
 {
   "hardware": {
-    "switch_pins": { ... },
-    "mux_pins": { ... },
-    "button_pins": { "red": 17, "yellow": 27, "green": 22, "blue": 23 },
-    "go_button_pin": 24,
-    "led_pins": { "red": 5, "yellow": 6, "green": 13, "blue": 19 },
-    "display_clk_pin": 20,
-    "display_dio_pin": 21,
+    "switch_pins": { "data": 8 },
+    "mux_pins": { "s0": 23, "s1": 24, "s2": 25 },
+    "button_pins": { "red": 26, "yellow": 19, "green": 13, "blue": 6 },
+    "go_button_pin": 17,
+    "led_pins": { "red": 21, "yellow": 20, "green": 16, "blue": 12 },
+    "display_clk_pin": 5,
+    "display_dio_pin": 4,
     "screen_width": 1024,
     "screen_height": 600,
-    "audio_enabled": false
+    "audio_enabled": true
   },
   "system": {
     "default_timeout_seconds": 900,
@@ -22,10 +22,15 @@
     "log_dir": "logs",
     "event_bus_queue_size": 1000,
     "webui_port": 8080,
-    "location": { "lat": 51.5074, "lon": -0.1278 }
+    "location": { "lat": 51.8167, "lon": -0.8146 },
+    "dev_mode": false,
+    "test_mode": false
   }
 }
 ```
+
+> **Pin assignments above match `docs/RPi-GPIO-Pin-Diagram.md` — the golden
+> truth for all GPIO wiring.**
 
 ## Config Loading
 

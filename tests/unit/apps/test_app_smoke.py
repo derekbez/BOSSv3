@@ -9,12 +9,15 @@ from __future__ import annotations
 import importlib.util
 import json
 import threading
-import time
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+
+from tests.helpers.runtime import wait_for_sync
+
+from boss.core.app_api import AppAPI
 
 APPS_DIR = Path(__file__).resolve().parents[3] / "src" / "boss" / "apps"
 
@@ -43,8 +46,10 @@ NETWORK_APPS = {
 
 # Apps that are safe to run locally (no network, read assets or simple logic)
 LOCAL_APPS = {
+    "admin_boss_admin",
     "admin_shutdown",
     "admin_startup",
+    "admin_wifi_configuration",
     "app_jokes",
     "constellation_of_the_night",
     "hello_world",
@@ -79,13 +84,14 @@ def _load_run(app_name: str):
 class MockScreen:
     def __init__(self):
         self.texts: list[str] = []
+        self.htmls: list[str] = []
         self.cleared = 0
 
     def display_text(self, text: str, **kwargs: Any) -> None:
         self.texts.append(text)
 
     def display_html(self, html: str) -> None:
-        pass
+        self.htmls.append(html)
 
     def display_image(self, path: str) -> None:
         pass
@@ -97,77 +103,45 @@ class MockScreen:
         self.cleared += 1
 
 
-class MockHardwareAPI:
-    def __init__(self):
-        self.leds: dict[str, bool] = {}
+def _make_mock_api(app_name: str) -> Any:
+    """Build an ``AppAPI``-shaped mock using ``create_autospec``.
 
-    def set_led(self, color: str, on: bool) -> None:
-        self.leds[color] = on
+    This guarantees the mock surface always matches the real ``AppAPI``
+    (missing/renamed methods will cause ``AttributeError``), while still
+    providing a real ``MockScreen`` instance so tests can inspect output.
+    """
+    from unittest.mock import create_autospec
 
+    api = create_autospec(AppAPI, instance=True)
+    app_dir = APPS_DIR / app_name
 
-class MockEventBus:
-    def __init__(self):
-        self._handlers: dict[str, Any] = {}
+    # Wire up sub-objects that apps interact with directly
+    api.screen = MockScreen()
+    api.hardware = MagicMock()
+    api.event_bus = MagicMock()
+    api.event_bus.subscribe.return_value = "mock_sub_id"
 
-    def subscribe(self, event_type: str, handler: Any, filter_dict: Any = None) -> str:
-        sid = f"sub_{id(handler)}"
-        self._handlers[sid] = handler
-        return sid
+    # Config access
+    manifest_path = app_dir / "manifest.json"
+    manifest_config: dict[str, Any] = {}
+    if manifest_path.exists():
+        raw = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest_config = raw.get("config", {})
 
-    def unsubscribe(self, sub_id: str) -> None:
-        self._handlers.pop(sub_id, None)
+    api.get_app_config.return_value = manifest_config
+    api.get_config_value.side_effect = lambda key, default=None: manifest_config.get(key, default)
+    api.get_global_location.return_value = {"lat": 51.5074, "lon": -0.1278}
+    api.get_secret.return_value = ""
+    api.get_all_app_summaries.return_value = [
+        {"switch": 0, "name": "list_all_apps", "description": "Lists apps"},
+        {"switch": 1, "name": "hello_world", "description": "Demo app"},
+    ]
+    api.get_app_path.return_value = app_dir
+    api.get_asset_path.side_effect = lambda filename: app_dir / "assets" / filename
+    api.get_webui_port.return_value = 8080
+    api.is_dev_mode.return_value = False
 
-    def publish_threadsafe(self, event_type: str, payload: dict | None = None) -> None:
-        pass
-
-
-class MockAPI:
-    def __init__(self, app_name: str):
-        self.screen = MockScreen()
-        self.hardware = MockHardwareAPI()
-        self.event_bus = MockEventBus()
-        self._app_name = app_name
-        self._app_dir = APPS_DIR / app_name
-
-    def get_app_config(self) -> dict:
-        manifest_path = self._app_dir / "manifest.json"
-        if manifest_path.exists():
-            raw = json.loads(manifest_path.read_text(encoding="utf-8"))
-            return raw.get("config", {})
-        return {}
-
-    def get_config_value(self, key: str, default: Any = None) -> Any:
-        return self.get_app_config().get(key, default)
-
-    def get_global_location(self) -> dict:
-        return {"lat": 51.5074, "lon": -0.1278}
-
-    def get_secret(self, key: str, default: str = "") -> str:
-        return default
-
-    def get_all_app_summaries(self) -> list[dict]:
-        return [
-            {"switch": 0, "name": "list_all_apps", "description": "Lists apps"},
-            {"switch": 1, "name": "hello_world", "description": "Demo app"},
-        ]
-
-    def get_app_path(self) -> Path:
-        return self._app_dir
-
-    def get_asset_path(self, filename: str) -> Path:
-        return self._app_dir / "assets" / filename
-
-    def log_info(self, msg: str) -> None:
-        pass
-
-    def log_debug(self, msg: str) -> None:
-        pass
-
-    def log_warning(self, msg: str) -> None:
-        pass
-
-    def log_error(self, msg: str) -> None:
-        pass
+    return api
 
 
 class TestAppImports:
@@ -185,7 +159,7 @@ class TestLocalAppSmoke:
     @pytest.mark.parametrize("app_name", sorted(LOCAL_APPS & set(_discover_apps())))
     def test_run(self, app_name: str):
         run_func = _load_run(app_name)
-        api = MockAPI(app_name)
+        api = _make_mock_api(app_name)
         stop = threading.Event()
 
         def _run():
@@ -196,10 +170,15 @@ class TestLocalAppSmoke:
 
         t = threading.Thread(target=_run, daemon=True)
         t.start()
-        # Let it run for a brief moment
-        time.sleep(0.5)
+        # Wait until the app has rendered something or cleared the screen,
+        # with a timeout rather than a fixed sleep.
+        wait_for_sync(
+            lambda: api.screen.texts or api.screen.htmls or api.screen.cleared > 0,
+            timeout=3.0,
+            interval=0.05,
+        )
         stop.set()
         t.join(timeout=3.0)
         assert not t.is_alive(), f"{app_name} did not stop within 3s"
         # Should have displayed something or cleared screen
-        assert api.screen.texts or api.screen.cleared > 0
+        assert api.screen.texts or api.screen.htmls or api.screen.cleared > 0

@@ -1,13 +1,17 @@
 {
-    "name": "list_all_apps",
-    "description": "Displays a paginated list of all available mini-apps.",
-    "version": "1.0.0",
-    "author": "B.O.S.S. Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 900,
-    "timeout_behavior": "return",
-    "tags": ["system", "utility"],
-    "config": {
-        "entries_per_page": 15
-    }
+  "name": "list_all_apps",
+  "display_name": "List All Apps",
+  "description": "Displays a paginated list of all available mini-apps.",
+  "version": "1.0.0",
+  "author": "B.O.S.S. Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 900,
+  "timeout_behavior": "return",
+  "tags": [
+    "system",
+    "utility"
+  ],
+  "config": {
+    "entries_per_page": 15
+  }
 }

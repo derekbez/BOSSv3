@@ -1,12 +1,19 @@
 {
-    "name": "current_weather",
-    "description": "Current weather + hourly forecast via Open-Meteo (no API key).",
-    "version": "1.0.0",
-    "author": "BOSS Team",
-    "entry_point": "main.py",
-    "timeout_seconds": 180,
-    "requires_network": true,
-    "tags": ["content", "network"],
-    "timeout_behavior": "return",
-    "config": { "refresh_seconds": 60, "request_timeout_seconds": 4 }
+  "name": "current_weather",
+  "display_name": "Current Weather",
+  "description": "Current weather + hourly forecast via Open-Meteo (no API key).",
+  "version": "1.0.0",
+  "author": "BOSS Team",
+  "entry_point": "main.py",
+  "timeout_seconds": 180,
+  "requires_network": true,
+  "tags": [
+    "content",
+    "network"
+  ],
+  "timeout_behavior": "return",
+  "config": {
+    "refresh_seconds": 60,
+    "request_timeout_seconds": 4
+  }
 }
