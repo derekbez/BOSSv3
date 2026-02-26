@@ -94,6 +94,7 @@ class AppAPI:
         config: BossConfig,
         secrets: SecretsManager | None = None,
         app_summaries: list[dict[str, Any]] | None = None,
+        app_config_overrides: dict[str, Any] | None = None,
     ) -> None:
         self._app_name = app_name
         self._app_dir = app_dir
@@ -101,6 +102,7 @@ class AppAPI:
         self._config = config
         self._secrets = secrets
         self._app_summaries = app_summaries or []
+        self._app_config_overrides = app_config_overrides or {}
 
         # Sub-APIs
         self.screen: ScreenInterface = screen
@@ -118,8 +120,10 @@ class AppAPI:
     # ------------------------------------------------------------------
 
     def get_app_config(self) -> dict[str, Any]:
-        """Return the full ``config`` dict from the app's manifest."""
-        return dict(self._manifest.config)
+        """Return manifest config merged with runtime overrides."""
+        merged = dict(self._manifest.config)
+        merged.update(self._app_config_overrides)
+        return merged
 
     def get_webui_port(self) -> int:
         """Return the current web UI port from the system config.
@@ -142,7 +146,8 @@ class AppAPI:
 
     def get_config_value(self, key: str, default: Any = None) -> Any:
         """Return a single config value from the manifest, with a default."""
-        return self._manifest.config.get(key, default)
+        cfg = self.get_app_config()
+        return cfg.get(key, default)
 
     def get_global_location(self) -> dict[str, float]:
         """Return the system-wide location as ``{"lat": …, "lon": …}``."""

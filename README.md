@@ -11,8 +11,8 @@ A modular Raspberry Pi mini-app platform with physical hardware controls (toggle
 - **Browser-based screen** (NiceGUI) renders text, images, HTML, and markdown
 - **Kiosk mode** on Raspberry Pi (Chromium fullscreen on HDMI display)
 - **Dev mode** on Windows/Mac with simulated hardware controls in the browser
-- **~30 mini-apps**: weather, jokes, news, tide times, space updates, and more
-- **Admin panel** at `/admin` — system status, app list, log viewer, secrets, WiFi management
+- **50+ mini-apps**: weather, jokes, news, tide times, space updates, utilities, and games
+- **Admin panel** at `/admin` — system status, editable global location, app config overrides, log viewer, secrets status + editing, WiFi management, and software update tools
 - **Event-driven architecture** with async event bus
 - **Plugin system** — each app is a self-contained directory with `main.py` + `manifest.json`
 

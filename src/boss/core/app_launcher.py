@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 
+from boss.config.app_runtime_config import get_app_overrides
 from boss.config.secrets_manager import SecretsManager
 from boss.core import events
 from boss.core.app_api import AppAPI
@@ -97,6 +98,7 @@ class AppLauncher:
 
         # Build app summary list for list_all_apps
         app_summaries = self._build_app_summaries()
+        app_overrides = get_app_overrides(app_name)
 
         # Create scoped API and launch
         api = AppAPI(
@@ -109,6 +111,7 @@ class AppLauncher:
             config=self._config,
             secrets=self._secrets,
             app_summaries=app_summaries,
+            app_config_overrides=app_overrides,
         )
 
         self._runner.run_app(app_name, app_dir, manifest, api)

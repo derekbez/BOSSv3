@@ -75,3 +75,42 @@ class TestSecretsManager:
             t.join()
 
         assert all(r == "V" for r in results)
+
+    def test_set_persists_to_file(self, tmp_path, monkeypatch):
+        secrets_file = tmp_path / "secrets.env"
+        monkeypatch.setenv("BOSS_SECRETS_FILE", str(secrets_file))
+
+        sm = SecretsManager()
+        sm.set("NEW_KEY", "new_value")
+
+        assert sm.get("NEW_KEY") == "new_value"
+        assert "NEW_KEY=new_value" in secrets_file.read_text(encoding="utf-8")
+
+    def test_delete_removes_key(self, tmp_path, monkeypatch):
+        secrets_file = tmp_path / "secrets.env"
+        secrets_file.write_text("A=1\nB=2\n", encoding="utf-8")
+        monkeypatch.setenv("BOSS_SECRETS_FILE", str(secrets_file))
+
+        sm = SecretsManager()
+        deleted = sm.delete("A")
+
+        assert deleted is True
+        assert sm.get("A", "") == ""
+        content = secrets_file.read_text(encoding="utf-8")
+        assert "A=1" not in content
+        assert "B=2" in content
+
+    def test_delete_missing_returns_false(self, tmp_path, monkeypatch):
+        secrets_file = tmp_path / "secrets.env"
+        monkeypatch.setenv("BOSS_SECRETS_FILE", str(secrets_file))
+
+        sm = SecretsManager()
+        assert sm.delete("MISSING") is False
+
+    def test_keys_returns_sorted_file_keys(self, tmp_path, monkeypatch):
+        secrets_file = tmp_path / "secrets.env"
+        secrets_file.write_text("B=2\nA=1\n", encoding="utf-8")
+        monkeypatch.setenv("BOSS_SECRETS_FILE", str(secrets_file))
+
+        sm = SecretsManager()
+        assert sm.keys() == ["A", "B"]

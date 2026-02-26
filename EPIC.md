@@ -154,7 +154,7 @@
   - Assets copied from v2: `jokes.json`, `emoji.json`, `places.json`, `sample.txt`
 - [x] **3.9** Migrate 5 special-case apps: `current_weather` (Open-Meteo, no key), `top_trending_search` (rewritten for SerpApi), `internet_speed_check` (placeholder), `constellation_of_the_night` (static), `joke_of_the_moment` (JokeAPI two-part reveal)
 - [x] **3.10** Update `app_mappings.json` — 29 apps mapped, removed `admin_wifi_configuration` (252) and `admin_boss_admin` (254) → deferred to Phase 5
-- [x] **3.11** Unit tests (228 new tests, 321 total)
+- [x] **3.11** Unit tests (228 new tests)
   - `test_error_utils.py` — 11 tests for `summarize_error`
   - `test_paginator.py` — 15 tests for paginator and wrap helpers
   - `test_http_helpers.py` — 6 tests for `fetch_json`/`fetch_text` with mocked requests
@@ -163,7 +163,7 @@
   - `test_app_api_phase3.py` — tests for `get_secret`, `get_all_app_summaries`, `publish_threadsafe`
   - `test_manifest_migration.py` — tests for enhanced `migrate_manifest_v2`
 
-**Acceptance:** 29 apps migrated, each has `run(stop_event, api)` + `manifest.json`, all 321 tests pass, no direct hardware imports in any app. 2 admin apps deferred to Phase 5.
+**Acceptance:** 29 apps migrated, each has `run(stop_event, api)` + `manifest.json`, tests pass, no direct hardware imports in any app. 2 admin apps deferred to Phase 5.
 
 ---
 
@@ -189,7 +189,7 @@
   - LEDs: red=21, yellow=20, green=16, blue=12
   - TM1637: CLK=5, DIO=4
   - Location: 51.8167, -0.8146 (user's actual location)
-- [x] **4.6** Unit tests (43 new, 364 total) — all GPIO classes tested via mocked gpiozero/tm1637
+- [x] **4.6** Unit tests (43 new) — all GPIO classes tested via mocked gpiozero/tm1637
   - `test_gpio_buttons.py` — 6 tests: pins, pull_up, bounce_time, callbacks, cleanup, interface
   - `test_gpio_go_button.py` — 4 tests: pin, callback, cleanup, interface
   - `test_gpio_leds.py` — 7 tests: pins, on/off, state tracking, all_off, cleanup, interface
@@ -199,7 +199,7 @@
 - [ ] **4.7** Test on actual Raspberry Pi hardware
 - [ ] **4.8** Verify LED/button parity (LED gating) works end-to-end on Pi
 
-**Acceptance:** All GPIO classes implement V3 ABCs, 364 tests pass on Windows via mocked gpiozero. Pi hardware testing (4.7–4.8) requires deployment.
+**Acceptance:** All GPIO classes implement V3 ABCs, tests pass on Windows via mocked gpiozero. Pi hardware testing (4.7–4.8) requires deployment.
 
 ---
 
@@ -238,7 +238,7 @@
   - Directs to `/admin/wifi` for password entry
   - Mapped in `app_mappings.json`
 - [x] **5.9** Wire admin page in `main.py` — deferred setup via `on_startup` (after `system.start()`)
-- [x] **5.10** Unit tests (41 new, 405 total)
+- [x] **5.10** Unit tests (41 new)
   - `test_validate_manifests.py` — 4 tests: script exists, runs successfully, finds discovered apps, reports switch mappings
   - `test_admin_page.py` — 3 tests: init, setup_page method, stores dependencies
   - `test_admin_boss_admin.py` — 5 tests: displays URL, configured port, IP detection, fallback, stop_event

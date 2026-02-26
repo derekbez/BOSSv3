@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import threading
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +55,36 @@ class SecretsManager:
         self._ensure_loaded()
         return self._store.get(key, default)
 
+    def set(self, key: str, value: str) -> None:
+        """Persist *key* in the secrets file and update in-memory cache."""
+        clean_key = key.strip()
+        if not clean_key:
+            raise ValueError("Secret key cannot be empty")
+
+        self._ensure_loaded()
+        with self._lock:
+            self._store[clean_key] = value
+            self._save_store()
+
+    def delete(self, key: str) -> bool:
+        """Delete *key* from persisted secrets. Returns True when deleted."""
+        clean_key = key.strip()
+        if not clean_key:
+            raise ValueError("Secret key cannot be empty")
+
+        self._ensure_loaded()
+        with self._lock:
+            if clean_key not in self._store:
+                return False
+            del self._store[clean_key]
+            self._save_store()
+            return True
+
+    def keys(self) -> list[str]:
+        """Return sorted keys currently known from file-backed store."""
+        self._ensure_loaded()
+        return sorted(self._store.keys())
+
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
@@ -76,6 +107,23 @@ class SecretsManager:
         _log.info("Loading secrets from %s", path)
         self._store = self._parse_env_file(path)
 
+    def _save_store(self) -> None:
+        path = self._resolve_write_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        content_lines = [f"{key}={self._store[key]}" for key in sorted(self._store)]
+        content = "\n".join(content_lines) + ("\n" if content_lines else "")
+
+        fd, tmp_name = tempfile.mkstemp(prefix=f"{path.name}.", suffix=".tmp", dir=str(path.parent))
+        try:
+            with open(fd, "w", encoding="utf-8") as handle:
+                handle.write(content)
+            Path(tmp_name).replace(path)
+        finally:
+            tmp_path = Path(tmp_name)
+            if tmp_path.exists():
+                tmp_path.unlink(missing_ok=True)
+
     @staticmethod
     def _resolve_path() -> Path | None:
         """Return the first existing secrets file, or ``None``."""
@@ -92,6 +140,13 @@ class SecretsManager:
             if p.is_file():
                 return p
         return None
+
+    @staticmethod
+    def _resolve_write_path() -> Path:
+        explicit = os.environ.get("BOSS_SECRETS_FILE")
+        if explicit:
+            return Path(explicit)
+        return Path(_DEFAULT_PATHS[0])
 
     @staticmethod
     def _parse_env_file(path: Path) -> dict[str, str]:

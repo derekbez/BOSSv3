@@ -34,7 +34,7 @@
 
 ## Config Loading
 
-`config_manager.get_effective_config()`:
+`config_manager.load_config()`:
 
 1. Load JSON file
 2. Apply environment overrides (`BOSS_LOG_LEVEL`, `BOSS_DEV_MODE`, etc.)
@@ -49,6 +49,14 @@
 | `BOSS_DEV_MODE=1` | Enable dev features |
 | `BOSS_TEST_MODE=1` | Force mock hardware |
 
+## Runtime Admin Overrides
+
+- Admin-edited app settings are stored separately from manifests in
+  `src/boss/config/app_runtime_overrides.json`.
+- The app manifest `config` remains the default source-of-truth in git.
+- At app launch, runtime overrides are merged over manifest config values.
+- This currently powers editable Admin config for `countdown_to_event`.
+
 ## Secrets
 
 `secrets_manager.py` provides a lazy, thread-safe singleton:
@@ -57,11 +65,14 @@
 - **File search**: `BOSS_SECRETS_FILE` env → `secrets/secrets.env` → `/etc/boss/secrets.env`
 - **Never** overrides real environment variables
 - **Never** committed to git (`secrets/secrets.env` is gitignored)
+- Supports admin writes/deletes via `SecretsManager.set(...)` and `SecretsManager.delete(...)`
 
 ### Usage
 
 ```python
-from boss.config import secrets
+from boss.config.secrets_manager import SecretsManager
+
+secrets = SecretsManager()
 api_key = secrets.get("WEATHER_API_KEY", default="")
 ```
 

@@ -11,6 +11,7 @@ all mini-app output. On Raspberry Pi, Chromium opens in kiosk mode pointing at
 - `ui/layout.py` — `@ui.page('/')` with main screen container + status bar
 - `ui/screen.py` — `NiceGUIScreen` implementing `ScreenInterface`
 - `ui/dev_panel.py` — hardware simulation controls (non-Pi only)
+- `ui/admin_page.py` — `@ui.page('/admin')` and `@ui.page('/admin/wifi')` for admin tools
 
 ## Thread Safety
 
@@ -63,3 +64,14 @@ ui.dark_mode().enable()
 
 Single-page app. Mini-app output swaps within a `@ui.refreshable` container.
 The status bar is persistent. No page navigation.
+
+## Admin UI
+
+`/admin` is the configuration/control surface and includes:
+
+- System status and installed app metadata
+- Editable global location (`boss_config.system.location`)
+- Editable app runtime overrides (currently `countdown_to_event`)
+- Log viewer and secrets status/editing
+- Link to `/admin/wifi` for Wi-Fi management
+- Software update card in non-dev mode with separate check/apply actions

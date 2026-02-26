@@ -95,3 +95,36 @@ class TestPublishThreadsafe:
         """Verify scoped event bus delegates publish_threadsafe to real bus."""
         # Just verify it doesn't raise
         api.event_bus.publish_threadsafe("test.event", {"key": "val"})
+
+
+class TestAppConfigOverrides:
+    def test_get_app_config_merges_overrides(self, manifest, bus):
+        manifest.config = {"a": 1, "b": 2}
+        a = AppAPI(
+            app_name="t",
+            app_dir=Path("/tmp"),
+            manifest=manifest,
+            event_bus=bus,
+            screen=MagicMock(),
+            leds=MagicMock(),
+            config=BossConfig(),
+            app_config_overrides={"b": 20, "c": 30},
+        )
+
+        cfg = a.get_app_config()
+        assert cfg == {"a": 1, "b": 20, "c": 30}
+
+    def test_get_config_value_reads_merged_config(self, manifest, bus):
+        manifest.config = {"event_name": "Default"}
+        a = AppAPI(
+            app_name="t",
+            app_dir=Path("/tmp"),
+            manifest=manifest,
+            event_bus=bus,
+            screen=MagicMock(),
+            leds=MagicMock(),
+            config=BossConfig(),
+            app_config_overrides={"event_name": "Override"},
+        )
+
+        assert a.get_config_value("event_name") == "Override"

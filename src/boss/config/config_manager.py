@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import tempfile
 from pathlib import Path
 
 from boss.core.models.config import BossConfig
@@ -58,6 +59,38 @@ def load_config(config_path: Path | str | None = None) -> BossConfig:
             _log.debug("Env override: %s → %s.%s = %r", env_key, section, field, env_val)
 
     return BossConfig(**raw)
+
+
+def save_system_location(
+    lat: float,
+    lon: float,
+    config_path: Path | str | None = None,
+) -> BossConfig:
+    """Persist ``system.location`` and return validated config.
+
+    The config file path resolution matches :func:`load_config`.
+    """
+    path = _resolve_config_path(config_path)
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw.setdefault("system", {})["location"] = {"lat": float(lat), "lon": float(lon)}
+
+    validated = BossConfig(**raw)
+    _atomic_write_json(path, validated.model_dump())
+    return validated
+
+
+def _atomic_write_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f"{path.name}.", suffix=".tmp", dir=str(path.parent))
+    try:
+        with open(fd, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2)
+            handle.write("\n")
+        Path(tmp_name).replace(path)
+    finally:
+        tmp_path = Path(tmp_name)
+        if tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
 
 
 def _resolve_config_path(config_path: Path | str | None) -> Path:

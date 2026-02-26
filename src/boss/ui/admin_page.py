@@ -5,12 +5,13 @@ Provides:
 * App list with switch mappings and required_env status
 * Log viewer (tail of boss.log with auto-refresh)
 * Git update button (guarded by dev_mode)
-* Secrets status overview
+* Secrets status and editing
 * WiFi management subpage at ``/admin/wifi``
 """
 
 from __future__ import annotations
 
+from datetime import date, time as dt_time
 import logging
 import platform
 import shutil
@@ -20,6 +21,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from nicegui import ui
+
+from boss.config.app_runtime_config import (
+    clear_app_overrides,
+    get_app_overrides,
+    set_app_overrides,
+)
+from boss.config.config_manager import save_system_location
 
 if TYPE_CHECKING:
     from boss.config.secrets_manager import SecretsManager
@@ -90,12 +98,204 @@ class AdminPage:
 
             # Cards
             self._build_status_card()
+            self._build_global_settings_card()
+            self._build_app_config_card()
             self._build_app_list_card()
             self._build_log_viewer_card()
             self._build_secrets_card()
             self._build_wifi_link_card()
             if not self._config.system.dev_mode:
                 self._build_git_update_card()
+
+    def _build_global_settings_card(self) -> None:
+        with ui.card().classes("w-full").style("background: #2a2a2a;"):
+            ui.label("Global Settings").style(
+                "font-size: 18px; font-weight: bold; color: #ffffff; margin-bottom: 8px;"
+            )
+            ui.label("Location applies on next app launch.").style(
+                "color: #888888; font-size: 13px;"
+            )
+
+            lat_input = ui.input(
+                "Latitude",
+                value=str(self._config.system.location.lat),
+                placeholder="e.g. 51.8167",
+            ).classes("w-full")
+            lon_input = ui.input(
+                "Longitude",
+                value=str(self._config.system.location.lon),
+                placeholder="e.g. -0.8146",
+            ).classes("w-full")
+
+            with ui.row().classes("gap-2"):
+                def _save_location() -> None:
+                    ok, message = self._save_location_values(lat_input.value, lon_input.value)
+                    ui.notify(message, color="positive" if ok else "negative")
+
+                ui.button("Save Location", on_click=_save_location, icon="save").props(
+                    "color=primary"
+                )
+
+    def _build_app_config_card(self) -> None:
+        with ui.card().classes("w-full").style("background: #2a2a2a;"):
+            ui.label("App Config").style(
+                "font-size: 18px; font-weight: bold; color: #ffffff; margin-bottom: 8px;"
+            )
+
+            app_name = "countdown_to_event"
+            manifest = self._app_manager.get_manifest(app_name)
+            if manifest is None:
+                ui.label("Countdown app manifest not found.").style(
+                    "color: #ff4444; font-size: 14px;"
+                )
+                return
+
+            effective = dict(manifest.config)
+            effective.update(get_app_overrides(app_name))
+
+            ui.label("Countdown to Event (applies on next launch)").style(
+                "color: #cccccc; font-size: 14px; margin-bottom: 8px;"
+            )
+
+            event_name_input = ui.input(
+                "Event Name",
+                value=str(effective.get("event_name", "Event")),
+            ).classes("w-full")
+            target_date_input = ui.input(
+                "Target Date (YYYY-MM-DD)",
+                value=str(effective.get("target_date", "2026-12-25")),
+            ).classes("w-full")
+            target_time_input = ui.input(
+                "Target Time (HH:MM:SS)",
+                value=str(effective.get("target_time", "00:00:00")),
+            ).classes("w-full")
+            refresh_input = ui.input(
+                "Refresh Seconds",
+                value=str(effective.get("refresh_seconds", 30)),
+            ).classes("w-full")
+
+            with ui.row().classes("gap-2"):
+                def _save_countdown() -> None:
+                    ok, message = self._save_countdown_overrides(
+                        event_name=event_name_input.value,
+                        target_date=target_date_input.value,
+                        target_time=target_time_input.value,
+                        refresh_seconds=refresh_input.value,
+                    )
+                    ui.notify(message, color="positive" if ok else "negative")
+
+                def _reset_countdown() -> None:
+                    ok, message = self._reset_countdown_overrides()
+                    if ok:
+                        defaults = manifest.config
+                        event_name_input.set_value(str(defaults.get("event_name", "Event")))
+                        target_date_input.set_value(str(defaults.get("target_date", "2026-12-25")))
+                        target_time_input.set_value(str(defaults.get("target_time", "00:00:00")))
+                        refresh_input.set_value(str(defaults.get("refresh_seconds", 30)))
+                    ui.notify(message, color="positive" if ok else "negative")
+
+                ui.button("Save", on_click=_save_countdown, icon="save").props(
+                    "color=primary"
+                )
+                ui.button("Reset to Defaults", on_click=_reset_countdown, icon="restart_alt").props(
+                    "flat color=warning"
+                )
+
+    def _save_location_values(self, lat: str, lon: str) -> tuple[bool, str]:
+        try:
+            lat_value = float(str(lat).strip())
+            lon_value = float(str(lon).strip())
+        except ValueError:
+            return False, "Location must be numeric."
+
+        if lat_value < -90 or lat_value > 90:
+            return False, "Latitude must be between -90 and 90."
+        if lon_value < -180 or lon_value > 180:
+            return False, "Longitude must be between -180 and 180."
+
+        try:
+            updated = save_system_location(lat=lat_value, lon=lon_value)
+            self._config.system.location.lat = updated.system.location.lat
+            self._config.system.location.lon = updated.system.location.lon
+            return True, "Location saved. Applies on next app launch."
+        except Exception as exc:
+            return False, f"Failed to save location: {exc}"
+
+    def _save_countdown_overrides(
+        self,
+        event_name: str,
+        target_date: str,
+        target_time: str,
+        refresh_seconds: str,
+    ) -> tuple[bool, str]:
+        name = str(event_name).strip()
+        if not name:
+            return False, "Event name cannot be empty."
+
+        date_text = str(target_date).strip()
+        time_text = str(target_time).strip()
+
+        try:
+            date.fromisoformat(date_text)
+        except Exception:
+            return False, "Target date must be YYYY-MM-DD."
+
+        try:
+            dt_time.fromisoformat(time_text)
+        except Exception:
+            return False, "Target time must be HH:MM:SS."
+
+        try:
+            refresh_value = float(str(refresh_seconds).strip())
+        except ValueError:
+            return False, "Refresh seconds must be numeric."
+        if refresh_value <= 0:
+            return False, "Refresh seconds must be greater than 0."
+
+        try:
+            set_app_overrides(
+                "countdown_to_event",
+                {
+                    "event_name": name,
+                    "target_date": date_text,
+                    "target_time": time_text,
+                    "refresh_seconds": refresh_value,
+                },
+            )
+            return True, "Countdown config saved. Applies on next app launch."
+        except Exception as exc:
+            return False, f"Failed to save app config: {exc}"
+
+    def _reset_countdown_overrides(self) -> tuple[bool, str]:
+        try:
+            clear_app_overrides("countdown_to_event")
+            return True, "Countdown config reset to manifest defaults."
+        except Exception as exc:
+            return False, f"Failed to reset app config: {exc}"
+
+    def _save_secret_value(self, key: str, value: str) -> tuple[bool, str]:
+        name = str(key).strip()
+        if not name:
+            return False, "Secret key cannot be empty."
+        if not value:
+            return False, "Secret value cannot be empty."
+        try:
+            self._secrets.set(name, value)
+            return True, f"Saved secret: {name}"
+        except Exception as exc:
+            return False, f"Failed to save secret: {exc}"
+
+    def _delete_secret_value(self, key: str) -> tuple[bool, str]:
+        name = str(key).strip()
+        if not name:
+            return False, "Secret key cannot be empty."
+        try:
+            deleted = self._secrets.delete(name)
+            if not deleted:
+                return False, f"Secret not found: {name}"
+            return True, f"Deleted secret: {name}"
+        except Exception as exc:
+            return False, f"Failed to delete secret: {exc}"
 
     # ------------------------------------------------------------------
     # Status card
@@ -231,6 +431,9 @@ class AdminPage:
             ui.label("Secrets Status").style(
                 "font-size: 18px; font-weight: bold; color: #ffffff; margin-bottom: 8px;"
             )
+            ui.label("Keys can be added, updated, or deleted here. Values are hidden.").style(
+                "color: #888888; font-size: 13px; margin-bottom: 8px;"
+            )
 
             # Collect all required_env keys across all apps
             all_keys: dict[str, list[str]] = {}  # key → [app_names]
@@ -257,6 +460,45 @@ class AdminPage:
                     )
                     ui.label(apps).style("color: #888888; font-size: 12px;")
 
+            ui.separator().style("background: #444444; margin-top: 10px;")
+            ui.label("Edit Secret").style(
+                "font-size: 16px; font-weight: bold; color: #ffffff; margin-top: 8px;"
+            )
+
+            select_key = ui.select(
+                options=sorted(all_keys.keys()),
+                label="Known key (optional)",
+            ).classes("w-full")
+            key_input = ui.input("Secret key", placeholder="BOSS_APP_EXAMPLE_API_KEY").classes("w-full")
+            value_input = ui.input(
+                "Secret value",
+                password=True,
+                password_toggle_button=True,
+            ).classes("w-full")
+
+            def _sync_key(e) -> None:
+                if e.value:
+                    key_input.set_value(str(e.value))
+
+            select_key.on("update:model-value", _sync_key)
+
+            with ui.row().classes("gap-2"):
+                def _save_secret() -> None:
+                    ok, message = self._save_secret_value(
+                        str(key_input.value or ""),
+                        str(value_input.value or ""),
+                    )
+                    if ok:
+                        value_input.set_value("")
+                    ui.notify(message, color="positive" if ok else "negative")
+
+                def _delete_secret() -> None:
+                    ok, message = self._delete_secret_value(str(key_input.value or ""))
+                    ui.notify(message, color="positive" if ok else "negative")
+
+                ui.button("Save / Update Secret", on_click=_save_secret, icon="save").props("color=primary")
+                ui.button("Delete Secret", on_click=_delete_secret, icon="delete").props("flat color=warning")
+
     # ------------------------------------------------------------------
     # Git update card
     # ------------------------------------------------------------------
@@ -266,36 +508,108 @@ class AdminPage:
             ui.label("Software Update").style(
                 "font-size: 18px; font-weight: bold; color: #ffffff; margin-bottom: 8px;"
             )
+            ui.label("Recommended flow: check first, then apply. Apply uses fast-forward only.").style(
+                "color: #888888; font-size: 13px; margin-bottom: 8px;"
+            )
+
+            repo_dir = self._repo_root()
+            ui.label(f"Repository: {repo_dir}").style(
+                "color: #888888; font-size: 13px; margin-bottom: 4px;"
+            )
 
             output_area = ui.log(max_lines=50).classes("w-full").style(
                 "height: 150px; background: #111111; color: #cccccc; "
                 "font-family: 'Courier New', monospace; font-size: 12px;"
             )
-            output_area.push("Click 'git pull' to check for updates.")
+            output_area.push("Step 1: Check updates. Step 2: Apply update if ready.")
 
-            def _run_git_pull() -> None:
-                output_area.clear()
-                output_area.push("Running git pull …")
-                try:
-                    result = subprocess.run(
-                        ["git", "pull"],
-                        cwd="/opt/boss",
-                        capture_output=True,
-                        text=True,
-                        timeout=30,
-                    )
-                    for line in result.stdout.splitlines():
+            with ui.row().classes("gap-2"):
+                def _check_updates() -> None:
+                    output_area.clear()
+                    ok, lines = self._check_for_updates()
+                    for line in lines:
                         output_area.push(line)
-                    if result.stderr:
-                        for line in result.stderr.splitlines():
-                            output_area.push(f"stderr: {line}")
-                    output_area.push(f"Exit code: {result.returncode}")
-                except Exception as exc:
-                    output_area.push(f"Error: {exc}")
+                    ui.notify(
+                        "Update check complete" if ok else "Update check failed",
+                        color="positive" if ok else "negative",
+                    )
 
-            ui.button("git pull", on_click=_run_git_pull, icon="download").props(
-                "color=warning"
-            )
+                def _apply_updates() -> None:
+                    output_area.clear()
+                    ok, lines = self._apply_git_update()
+                    for line in lines:
+                        output_area.push(line)
+                    ui.notify(
+                        "Update applied" if ok else "Update failed",
+                        color="positive" if ok else "negative",
+                    )
+
+                ui.button("1) Check Updates", on_click=_check_updates, icon="refresh").props(
+                    "flat color=primary"
+                )
+                ui.button("2) Apply Update", on_click=_apply_updates, icon="download").props(
+                    "color=warning"
+                )
+
+    def _repo_root(self) -> Path:
+        deployed = Path("/opt/boss")
+        if deployed.is_dir():
+            return deployed
+        return Path(__file__).resolve().parents[3]
+
+    def _run_git_command(self, args: list[str], timeout: int = 30) -> tuple[int, str, str]:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=str(self._repo_root()),
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        return result.returncode, result.stdout.strip(), result.stderr.strip()
+
+    def _check_for_updates(self) -> tuple[bool, list[str]]:
+        lines = ["Checking for updates …"]
+        code, out, err = self._run_git_command(["fetch", "--all", "--prune"], timeout=60)
+        if out:
+            lines.extend(out.splitlines())
+        if err:
+            lines.extend([f"stderr: {line}" for line in err.splitlines()])
+        if code != 0:
+            lines.append(f"Exit code: {code}")
+            return False, lines
+
+        code, out, err = self._run_git_command(["status", "-sb"]) 
+        if out:
+            lines.extend(out.splitlines())
+        if err:
+            lines.extend([f"stderr: {line}" for line in err.splitlines()])
+
+        code_log, log_out, log_err = self._run_git_command(["log", "--oneline", "HEAD..@{u}"])
+        if log_out:
+            lines.append("Commits available upstream:")
+            lines.extend(log_out.splitlines()[:20])
+        elif code_log == 0:
+            lines.append("Already up to date with upstream.")
+
+        if log_err and "no upstream configured" in log_err.lower():
+            lines.append("No upstream branch configured.")
+        elif log_err:
+            lines.extend([f"stderr: {line}" for line in log_err.splitlines()])
+
+        return True, lines
+
+    def _apply_git_update(self) -> tuple[bool, list[str]]:
+        lines = ["Applying update with fast-forward only …"]
+        code, out, err = self._run_git_command(["pull", "--ff-only"], timeout=90)
+        if out:
+            lines.extend(out.splitlines())
+        if err:
+            lines.extend([f"stderr: {line}" for line in err.splitlines()])
+        lines.append(f"Exit code: {code}")
+        if code == 0:
+            lines.append("Update complete. Restart BOSS service if required.")
+            return True, lines
+        return False, lines
 
     # ------------------------------------------------------------------
     # WiFi link card (on admin page)
