@@ -156,25 +156,25 @@
 
 ## Documentation vs Code Drift
 
-### 23. Pin numbers don't match
+### 23. ~~Pin numbers don't match~~ ✅ FIXED
 **Golden truth:** `docs/RPi-GPIO-Pin-Diagram.md`
 **Drifted file:** `.github/instructions/configuration.md` — shows placeholder pin numbers (`button_pins: {red:17, yellow:27, green:22, blue:23}`, `go_button_pin: 24`, `led_pins: {red:5, yellow:6, green:13, blue:19}`, `display_clk_pin: 20`, `display_dio_pin: 21`) that do not match the actual wiring.
 **Code (correct):** `src/boss/config/boss_config.json` already matches the pin diagram.
-**Fix:** Rewrite the JSON sample in `configuration.md` to exactly mirror `boss_config.json`, which reflects the real hardware wiring per the pin diagram.
+**Fix applied:** `configuration.md` JSON sample now mirrors `src/boss/config/boss_config.json` exactly, and both match `docs/RPi-GPIO-Pin-Diagram.md`.
 
-### 24. Hardware docs say `PWMLED` — code uses `LED`
+### 24. ~~Hardware docs say `PWMLED` — code uses `LED`~~ ✅ FIXED
 **Docs:** `.github/instructions/hardware.md`
 **Code:** `src/boss/hardware/gpio/gpio_hardware.py`
-**Fix:** Update docs to say `LED` (boolean on/off).
+**Fix applied:** `hardware.md` now documents gpiozero `LED` (boolean on/off), matching implementation.
 
-### 25. Docs say 10 Hz switch polling — code polls at ~20 Hz
+### 25. ~~Docs say 10 Hz switch polling — code polls at ~20 Hz~~ ✅ FIXED
 **Docs:** `.github/instructions/hardware.md`
 **Code:** `src/boss/hardware/gpio/gpio_hardware.py` uses 50ms sleep
-**Fix:** Update docs to say ~20 Hz.
+**Fix applied:** `hardware.md` now states ~20 Hz polling.
 
-### 26. `output.screen.updated` event defined but never published
+### 26. ~~`output.screen.updated` event defined but never published~~ ✅ FIXED
 **File:** `src/boss/core/events.py`
-**Fix:** Either publish it from `NiceGUIScreen` after updates, or remove the constant.
+**Fix applied:** Removed unused `SCREEN_UPDATED` / `output.screen.updated` from `events.py` and removed it from `.github/instructions/event_bus.md` taxonomy to keep docs/code aligned.
 
 ### 27. ~~Shutdown payload docs say `{action, reason}` — code only sends `{reason}`~~ ✅ FIXED
 **Fix:** Resolved as part of bug #1. `admin_shutdown` now sends both `action` and `reason` keys, matching the event taxonomy documented in `event_bus.md`.

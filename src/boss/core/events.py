@@ -14,7 +14,6 @@ GO_BUTTON_PRESSED = "input.go_button.pressed"
 
 LED_STATE_CHANGED = "output.led.state_changed"
 DISPLAY_UPDATED = "output.display.updated"
-SCREEN_UPDATED = "output.screen.updated"
 
 # --- System lifecycle events ---------------------------------------------
 

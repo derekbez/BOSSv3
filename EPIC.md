@@ -239,12 +239,12 @@
   - Mapped in `app_mappings.json`
 - [x] **5.9** Wire admin page in `main.py` — deferred setup via `on_startup` (after `system.start()`)
 - [x] **5.10** Unit tests (41 new, 405 total)
-  - `test_validate_manifests.py` — 4 tests: script exists, runs successfully, finds 31 apps, reports switch mappings
+  - `test_validate_manifests.py` — 4 tests: script exists, runs successfully, finds discovered apps, reports switch mappings
   - `test_admin_page.py` — 3 tests: init, setup_page method, stores dependencies
   - `test_admin_boss_admin.py` — 5 tests: displays URL, configured port, IP detection, fallback, stop_event
   - `test_admin_wifi.py` — 8 tests: dev mode, no nmcli, URL, IP, nmcli detection, stop_event
   - `test_system_manager_phase5.py` — 7 tests: properties, dev_mode guards, subprocess calls, sys.exit
-  - `test_manifest_scan.py` and `test_app_smoke.py` automatically pick up 2 new admin apps (31 total)
+  - `test_manifest_scan.py` and `test_app_smoke.py` automatically pick up newly added admin apps
 - [x] **5.11** Final cleanup: removed unused import, updated `README.md` (admin panel + scripts in features/structure)
 - [ ] **5.12** Pi OS preparation: Desktop image, autologin, X11, no screen blanking (documented in PI_SETUP.md)
 - [ ] **5.13** End-to-end testing on Pi: switches → Go → app renders in kiosk Chromium

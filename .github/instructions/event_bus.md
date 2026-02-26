@@ -39,7 +39,6 @@ repeated failures from blocking the event pipeline.
 | | `input.go_button.pressed` | `{}` |
 | **Output** | `output.led.state_changed` | `{color: str, is_on: bool}` |
 | | `output.display.updated` | `{value: int\|None}` |
-| | `output.screen.updated` | `{content_type: str, content: str}` |
 | **System** | `system.started` | `{hardware_type: str}` |
 | | `system.shutdown.requested` | `{action: str, reason: str}` |
 | | `system.shutdown.initiated` | `{reason: str}` |
