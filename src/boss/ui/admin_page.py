@@ -12,10 +12,12 @@ Provides:
 from __future__ import annotations
 
 from datetime import date, time as dt_time
+import json
 import logging
 import platform
 import shutil
 import subprocess
+import tempfile
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -101,6 +103,7 @@ class AdminPage:
             self._build_global_settings_card()
             self._build_app_config_card()
             self._build_app_list_card()
+            self._build_app_management_card()
             self._build_log_viewer_card()
             self._build_secrets_card()
             self._build_wifi_link_card()
@@ -297,6 +300,218 @@ class AdminPage:
         except Exception as exc:
             return False, f"Failed to delete secret: {exc}"
 
+    def _build_app_management_card(self) -> None:
+        with ui.card().classes("w-full").style("background: #2a2a2a;"):
+            ui.label("App Management").style(
+                "font-size: 18px; font-weight: bold; color: #ffffff; margin-bottom: 8px;"
+            )
+            ui.label("Reassign switch numbers and edit manifest config.").style(
+                "color: #888888; font-size: 13px; margin-bottom: 8px;"
+            )
+
+            manifests = self._app_manager.get_all_manifests()
+            switch_map = self._app_manager.get_switch_map()
+            app_options = self._sorted_app_names(manifests, switch_map)
+            if not app_options:
+                ui.label("No apps discovered.").style("color: #888888;")
+                return
+
+            app_select = ui.select(options=app_options, label="App").classes("w-full")
+            current_switch_label = ui.label("Current switch: —").style("color: #aaaaaa; font-size: 12px;")
+            switch_select = ui.select(options=[], label="Switch number (available)").classes("w-full")
+
+            manifest_area = ui.textarea(label="Manifest (read-only)").props("readonly autogrow").classes("w-full")
+            config_area = ui.textarea(label="Manifest config (JSON object)").props("autogrow").classes("w-full")
+
+            def _refresh_manifest_views(selected: str) -> None:
+                ok, manifest_text, config_text, message = self._get_manifest_views(selected)
+                manifest_area.set_value(manifest_text)
+                config_area.set_value(config_text)
+                if message:
+                    ui.notify(message, color="positive" if ok else "negative")
+
+                current_switch_map = self._app_manager.get_switch_map()
+                current = self._first_switch_for_app(selected, current_switch_map)
+                available = self._get_unassigned_switches(selected, current_switch_map)
+                options = [str(v) for v in available]
+                switch_select.set_options(options)
+
+                if current is None:
+                    current_switch_label.set_text("Current switch: —")
+                    switch_select.set_value(options[0] if options else None)
+                else:
+                    current_switch_label.set_text(f"Current switch: {current}")
+                    switch_select.set_value(str(current))
+
+            app_select.set_value(app_options[0])
+            _refresh_manifest_views(app_options[0])
+
+            def _on_select(e) -> None:
+                selected = str(e.value or "").strip()
+                if selected:
+                    _refresh_manifest_views(selected)
+
+            app_select.on("update:model-value", _on_select)
+
+            with ui.row().classes("gap-2"):
+                def _assign_switch() -> None:
+                    ok, message = self._assign_app_switch(
+                        app_name=str(app_select.value or ""),
+                        switch_value_text=str(switch_select.value or ""),
+                    )
+                    if ok:
+                        _refresh_manifest_views(str(app_select.value or ""))
+                    ui.notify(message, color="positive" if ok else "negative")
+
+                def _reload_manifest() -> None:
+                    _refresh_manifest_views(str(app_select.value or ""))
+
+                ui.button("Assign Switch Number", on_click=_assign_switch, icon="pin").props("color=primary")
+                ui.button("Reload Manifest", on_click=_reload_manifest, icon="refresh").props("flat color=primary")
+
+            with ui.row().classes("gap-2"):
+                def _save_manifest_config_click() -> None:
+                    ok, message = self._save_manifest_config(
+                        app_name=str(app_select.value or ""),
+                        config_text=str(config_area.value or "{}"),
+                    )
+                    if ok:
+                        _refresh_manifest_views(str(app_select.value or ""))
+                    ui.notify(message, color="positive" if ok else "negative")
+
+                ui.button("Save Manifest Config", on_click=_save_manifest_config_click, icon="save").props(
+                    "color=primary"
+                )
+
+    def _sorted_app_names(
+        self,
+        manifests: dict[str, object],
+        switch_map: dict[int, str],
+    ) -> list[str]:
+        reverse: dict[str, list[int]] = {}
+        for sw, app in switch_map.items():
+            reverse.setdefault(app, []).append(sw)
+        return sorted(
+            manifests.keys(),
+            key=lambda app: (min(reverse.get(app, [999])), app),
+        )
+
+    def _first_switch_for_app(self, app_name: str, switch_map: dict[int, str]) -> int | None:
+        values = [sw for sw, name in switch_map.items() if name == app_name]
+        if not values:
+            return None
+        return min(values)
+
+    def _get_unassigned_switches(self, app_name: str, switch_map: dict[int, str]) -> list[int]:
+        assigned_to_others = {sw for sw, name in switch_map.items() if name != app_name}
+        return [value for value in range(256) if value not in assigned_to_others]
+
+    def _mappings_file_path(self) -> Path:
+        p = getattr(self._app_manager, "_mappings_path", None)
+        if not isinstance(p, Path):
+            raise RuntimeError("App manager mappings path not available")
+        return p
+
+    def _atomic_write_json(self, path: Path, payload: dict) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_name = tempfile.mkstemp(prefix=f"{path.name}.", suffix=".tmp", dir=str(path.parent))
+        try:
+            with open(fd, "w", encoding="utf-8") as handle:
+                json.dump(payload, handle, indent=2)
+                handle.write("\n")
+            Path(tmp_name).replace(path)
+        finally:
+            tmp_path = Path(tmp_name)
+            if tmp_path.exists():
+                tmp_path.unlink(missing_ok=True)
+
+    def _assign_app_switch(self, app_name: str, switch_value_text: str) -> tuple[bool, str]:
+        name = app_name.strip()
+        if not name:
+            return False, "Select an app first."
+
+        try:
+            switch_value = int(switch_value_text.strip())
+        except ValueError:
+            return False, "Switch number must be an integer."
+
+        if switch_value < 0 or switch_value > 255:
+            return False, "Switch number must be between 0 and 255."
+
+        path = self._mappings_file_path()
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        wrapped = isinstance(raw, dict) and isinstance(raw.get("app_mappings"), dict)
+        mappings = dict(raw.get("app_mappings", {})) if wrapped else dict(raw)
+
+        existing = mappings.get(str(switch_value))
+        if existing and existing != name:
+            return False, f"Switch {switch_value} is already assigned to '{existing}'."
+
+        for key, value in list(mappings.items()):
+            if value == name:
+                del mappings[key]
+        mappings[str(switch_value)] = name
+
+        ordered = dict(sorted(mappings.items(), key=lambda item: int(item[0])))
+        payload = dict(raw)
+        if wrapped:
+            payload["app_mappings"] = ordered
+        else:
+            payload = ordered
+
+        self._atomic_write_json(path, payload)
+        self._app_manager.scan_apps()
+        return True, f"Assigned '{name}' to switch {switch_value}."
+
+    def _get_manifest_views(self, app_name: str) -> tuple[bool, str, str, str]:
+        name = app_name.strip()
+        if not name:
+            return False, "", "{}", "Select an app first."
+
+        app_dir = self._app_manager.get_app_dir(name)
+        if app_dir is None:
+            return False, "", "{}", f"App directory not found for '{name}'."
+        manifest_path = app_dir / "manifest.json"
+        if not manifest_path.is_file():
+            return False, "", "{}", f"Manifest not found for '{name}'."
+
+        raw = json.loads(manifest_path.read_text(encoding="utf-8"))
+        config = raw.get("config", {})
+        if not isinstance(config, dict):
+            config = {}
+        return (
+            True,
+            json.dumps(raw, indent=2),
+            json.dumps(config, indent=2),
+            "",
+        )
+
+    def _save_manifest_config(self, app_name: str, config_text: str) -> tuple[bool, str]:
+        name = app_name.strip()
+        if not name:
+            return False, "Select an app first."
+
+        app_dir = self._app_manager.get_app_dir(name)
+        if app_dir is None:
+            return False, f"App directory not found for '{name}'."
+        manifest_path = app_dir / "manifest.json"
+        if not manifest_path.is_file():
+            return False, f"Manifest not found for '{name}'."
+
+        try:
+            config_obj = json.loads(config_text)
+        except json.JSONDecodeError as exc:
+            return False, f"Config JSON is invalid: {exc}"
+
+        if not isinstance(config_obj, dict):
+            return False, "Config must be a JSON object."
+
+        raw = json.loads(manifest_path.read_text(encoding="utf-8"))
+        raw["config"] = config_obj
+        self._atomic_write_json(manifest_path, raw)
+        self._app_manager.scan_apps()
+        return True, f"Saved config for '{name}'."
+
     # ------------------------------------------------------------------
     # Status card
     # ------------------------------------------------------------------
@@ -358,7 +573,8 @@ class AdminPage:
             ]
 
             rows = []
-            for app_name in sorted(manifests):
+            full_switch_map = self._app_manager.get_switch_map()
+            for app_name in self._sorted_app_names(manifests, full_switch_map):
                 manifest = manifests[app_name]
                 sw_vals = switch_map.get(app_name, [])
                 sw_str = ", ".join(str(v) for v in sw_vals) if sw_vals else "—"

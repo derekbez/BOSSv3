@@ -12,7 +12,7 @@
   ],
   "timeout_behavior": "return",
   "config": {
-    "lines": 5,
+    "lines": 6,
     "shuffle_seconds": 600
   }
 }

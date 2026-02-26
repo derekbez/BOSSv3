@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -142,3 +144,74 @@ class TestAdminPage:
 
         assert ok is False
         assert any("Exit code: 1" in line for line in lines)
+
+    def test_sorted_app_names_uses_switch_order(self) -> None:
+        page = self._make_admin_page()
+        manifests = {"b": object(), "a": object(), "c": object()}
+        switch_map = {20: "b", 5: "a"}
+
+        result = page._sorted_app_names(manifests, switch_map)
+
+        assert result == ["a", "b", "c"]
+
+    def test_assign_app_switch_updates_mappings(self, tmp_path) -> None:
+        page = self._make_admin_page()
+        mappings_path = tmp_path / "app_mappings.json"
+        mappings_path.write_text(
+            json.dumps({"app_mappings": {"10": "old_app", "20": "target_app"}, "parameters": {}}),
+            encoding="utf-8",
+        )
+
+        page._app_manager._mappings_path = mappings_path
+        page._app_manager.scan_apps = MagicMock()
+
+        ok, message = page._assign_app_switch("target_app", "30")
+
+        assert ok is True
+        assert "switch 30" in message
+        updated = json.loads(mappings_path.read_text(encoding="utf-8"))
+        assert updated["app_mappings"].get("30") == "target_app"
+        assert "20" not in updated["app_mappings"]
+        page._app_manager.scan_apps.assert_called_once()
+
+    def test_assign_app_switch_rejects_collision(self, tmp_path) -> None:
+        page = self._make_admin_page()
+        mappings_path = tmp_path / "app_mappings.json"
+        mappings_path.write_text(
+            json.dumps({"app_mappings": {"10": "alpha", "20": "beta"}, "parameters": {}}),
+            encoding="utf-8",
+        )
+        page._app_manager._mappings_path = mappings_path
+
+        ok, message = page._assign_app_switch("alpha", "20")
+
+        assert ok is False
+        assert "already assigned" in message
+
+    def test_save_manifest_config_updates_manifest(self, tmp_path) -> None:
+        page = self._make_admin_page()
+        app_dir = tmp_path / "demo_app"
+        app_dir.mkdir(parents=True, exist_ok=True)
+        manifest_path = app_dir / "manifest.json"
+        manifest_path.write_text(
+            json.dumps(
+                {
+                    "name": "demo_app",
+                    "entry_point": "main.py",
+                    "timeout_behavior": "return",
+                    "config": {"x": 1},
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        page._app_manager.get_app_dir.return_value = app_dir
+        page._app_manager.scan_apps = MagicMock()
+
+        ok, message = page._save_manifest_config("demo_app", '{"x": 2, "y": "ok"}')
+
+        assert ok is True
+        assert "Saved config" in message
+        raw = json.loads(manifest_path.read_text(encoding="utf-8"))
+        assert raw["config"] == {"x": 2, "y": "ok"}
+        page._app_manager.scan_apps.assert_called_once()

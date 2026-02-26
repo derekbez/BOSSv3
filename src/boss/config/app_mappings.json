@@ -2,13 +2,11 @@
   "app_mappings": {
     "0": "list_all_apps",
     "1": "hello_world",
-
     "5": "app_jokes",
     "6": "quote_of_the_day",
     "7": "bird_sightings_near_me",
     "8": "breaking_news",
     "9": "current_weather",
-
     "16": "word_of_the_day",
     "17": "random_useless_fact",
     "18": "on_this_day",
@@ -21,17 +19,13 @@
     "25": "name_that_animal",
     "26": "color_of_the_day",
     "27": "random_local_place_name",
-
     "28": "moon_phase",
     "29": "space_update",
     "30": "constellation_of_the_night",
     "31": "local_tide_times",
-
     "32": "joke_of_the_moment",
-
     "74": "flights_leaving_heathrow",
     "75": "flight_status_favorite_airline",
-
     "155": "iss_tracker",
     "156": "currency_exchange",
     "157": "wikipedia_random_article",
@@ -50,7 +44,6 @@
     "170": "coin_flip_streak",
     "171": "pomodoro_timer",
     "172": "countdown_to_event",
-
     "231": "internet_speed_check",
     "244": "admin_startup",
     "252": "admin_wifi_configuration",
